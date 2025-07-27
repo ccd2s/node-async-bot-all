@@ -2,4 +2,4 @@
 
 [![npm](https://img.shields.io/npm/v/koishi-plugin-node-async-bot-all?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-node-async-bot-all)
 
-插件
+NodeAsync Bot插件（自用）

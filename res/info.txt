@@ -3,3 +3,6 @@
 本机器人仅服务于 基沃托斯·工业革命 服务器。
 --- 开发者 ---
 德二吹风机（3112836258）
+--- 其他 ---
+开源地址：https://github.com/ccd2s/node-async-bot-all
+官网：https://www.tasaed.top
