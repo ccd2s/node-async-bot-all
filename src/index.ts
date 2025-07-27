@@ -1,8 +1,9 @@
 import { Context } from 'koishi'
-import {getHongKongTime,fetchWithTimeout} from './fun'
+import {getHongKongTime,fetchWithTimeout,getSystemUsage} from './fun'
 
 export const name = 'node-async-bot-all'
 
+// 指令 cx
 async function getServer(ctx: Context, session: any) {
   let msg = "";
   let dataError = "";
@@ -45,10 +46,33 @@ async function getServer(ctx: Context, session: any) {
   }
   return msg;
 }
+// 指令 Status
+async function getStatus(ctx: Context, session: any) {
+  ctx.logger.info("Got: "+session.text('.message', {
+    platform: session.platform,
+    selfId: session.selfId,
+  }));
+  const time = getHongKongTime();
+  let msg: string;
+  const vMsg = await getSystemUsage();
+  if (!vMsg.includes("系统名称")){
+    ctx.logger.error(vMsg);
+    msg = `${time}\n状态获取失败。`;
+  } else {
+    msg = `${time}\n`+vMsg;
+  }
+  ctx.logger.info("Sent: "+msg)
+  return msg;
+}
 
+// Main
 export function apply(ctx: Context) {
   ctx.command('cx')
     .action(({ session }) => {
       return getServer(ctx,session);
     });
+  ctx.command('status')
+    .action(({ session }) => {
+      return getStatus(ctx,session);
+    })
 }
