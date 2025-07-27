@@ -1,13 +1,14 @@
 rw:
-  failed1: 获取失败（1）
-  failed2: 获取失败（2）
+  failed1: 获取失败（1）。
+  failed2: 获取失败（2）。
 cx:
+  forbidden: 此指令不允许在本群使用。
   notice: 进服指南请在群公告中查看。
   players: 服务器当前人数
   failed: 查询失败：
-  timeout: 请求超时
-  later: 请稍后重试
-  unknown: 未知错误
+  timeout: 请求超时。
+  later: 请稍后重试。
+  unknown: 未知错误。
 status:
   failed: 状态获取失败。
   name: 系统名称：
@@ -16,4 +17,4 @@ status:
 random:
   sc: 生成的随机数：
 info:
-  failed: 读取信息失败
+  failed: 读取信息失败。

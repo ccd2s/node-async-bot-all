@@ -14,37 +14,43 @@ async function getServer(ctx: Context, session: any) {
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  try {
-    // 发送请求
-    const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000); // 8秒超时
-    // 判断是否成功
-    if (response.ok) {
-      data = await response.text();
-      ctx.logger.info("Server data: "+data);
-      // 发送消息
-      data = JSON.parse(data);
-      msg = `${time}\n【${i18n.cx.players}】\n  ➣ ${data['version']}：${data['players']}\n${i18n.cx.notice}`;
-      ctx.logger.info("Sent: "+msg)
-    } else {
-      dataError = await response.text();
-      try {
-        const vError = JSON.parse(dataError);
-        error = vError['data'];
-      } catch (e) {
-        if(dataError.includes("CDN节点请求源服务器超时")){
-          error = i18n.cx.timeout;
-        } else {
-          error = i18n.cx.unknown;
+  if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162"){
+    try {
+      // 发送请求
+      const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000); // 8秒超时
+      // 判断是否成功
+      if (response.ok) {
+        data = await response.text();
+        ctx.logger.info("Server data: "+data);
+        // 发送消息
+        data = JSON.parse(data);
+        msg = `${time}\n【${i18n.cx.players}】\n  ➣ ${data['version']}：${data['players']}\n${i18n.cx.notice}`;
+        ctx.logger.info("Sent: "+msg)
+      } else {
+        dataError = await response.text();
+        try {
+          const vError = JSON.parse(dataError);
+          error = vError['data'];
+        } catch (e) {
+          if(dataError.includes("CDN节点请求源服务器超时")){
+            error = i18n.cx.timeout;
+          } else {
+            error = i18n.cx.unknown;
+          }
         }
+        ctx.logger.error(`Error fetching data: ${dataError}`);
+        msg = `${time}\n${i18n.cx.failed}${error}\n${i18n.cx.later}`;
+        ctx.logger.info("Sent: "+msg)
       }
-      ctx.logger.error(`Error fetching data: ${dataError}`);
-      msg = `${time}\n${i18n.cx.failed}${error}\n${i18n.cx.later}`;
+    } catch (err) {
+      // 报错
+      ctx.logger.error(`Request error:  ${err.message}`);
+      msg = `${time}\n${i18n.cx.failed}${i18n.cx.timeout}\n${i18n.cx.later}`;
       ctx.logger.info("Sent: "+msg)
     }
-  } catch (err) {
-    // 报错
-    ctx.logger.error(`Request error:  ${err.message}`);
-    msg = `${time}\n${i18n.cx.failed}${i18n.cx.timeout}\n${i18n.cx.later}`;
+  }
+  else {
+    msg = `${time}\n${i18n.cx.forbidden}`;
     ctx.logger.info("Sent: "+msg)
   }
   return msg;
