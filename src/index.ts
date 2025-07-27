@@ -150,7 +150,9 @@ export function apply(ctx: Context) {
     .action(({ session }) => {
       return getStatus(ctx,session);
     })
-  ctx.command('random [最小数:number] [最大数:number]',"随机数生成器，缺少参数时默认生成 0-10000 的随机数。")
+  ctx.command('random [最小数:number] [最大数:number]',"随机数生成器。")
+    .usage("缺少参数时默认生成 0-10000 的随机数。")
+    .example('random 1 128 生成1到128范围的随机数')
     .action(({ session },min,max) => {
       return getRandom(ctx,session,min,max);
     })
