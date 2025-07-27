@@ -1,14 +1,12 @@
 import { Context } from 'koishi'
 import {getHongKongTime,fetchWithTimeout,getSystemUsage,readInfoFile} from './fun'
+import i18n from "../res/i18n.yaml"
 
 export const name = 'node-async-bot-all'
 
 // 指令 cx
 async function getServer(ctx: Context, session: any) {
-  ctx.logger.info("Got: "+session.text('.message', {
-    platform: session.platform,
-    selfId: session.selfId,
-  }));
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
   // 设立必要变量
   let msg: string;
   let dataError : string;
@@ -25,7 +23,7 @@ async function getServer(ctx: Context, session: any) {
       ctx.logger.info("Server data: "+data);
       // 发送消息
       data = JSON.parse(data);
-      msg = `${time}\n【服务器当前人数】\n  ➣ ${data['version']}：${data['players']}\n进服指南请在群公告中查看。`;
+      msg = `${time}\n【${i18n.cx.players}】\n  ➣ ${data['version']}：${data['players']}\n${i18n.cx.notice}`;
       ctx.logger.info("Sent: "+msg)
     } else {
       dataError = await response.text();
@@ -34,29 +32,26 @@ async function getServer(ctx: Context, session: any) {
         error = vError['data'];
       } catch (e) {
         if(dataError.includes("CDN节点请求源服务器超时")){
-          error = "请求超时";
+          error = i18n.cx.timeout;
         } else {
-          error = "未知错误";
+          error = i18n.cx.unknown;
         }
       }
       ctx.logger.error(`Error fetching data: ${dataError}`);
-      msg = `${time}\n查询失败：${error}\n请稍后重试`;
+      msg = `${time}\n${i18n.cx.failed}${error}\n${i18n.cx.later}`;
       ctx.logger.info("Sent: "+msg)
     }
   } catch (err) {
     // 报错
     ctx.logger.error(`Request error:  ${err.message}`);
-    msg = `${time}\n查询失败：请求超时\n请稍后重试`;
+    msg = `${time}\n${i18n.cx.failed}${i18n.cx.timeout}\n${i18n.cx.later}`;
     ctx.logger.info("Sent: "+msg)
   }
   return msg;
 }
 // 指令 Status
 async function getStatus(ctx: Context, session: any) {
-  ctx.logger.info("Got: "+session.text('.message', {
-    platform: session.platform,
-    selfId: session.selfId,
-  }));
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: string;
@@ -64,7 +59,7 @@ async function getStatus(ctx: Context, session: any) {
   // 判断是否读取失败
   if (!vMsg.includes("系统名称")){
     ctx.logger.error(vMsg);
-    msg = `${time}\n状态获取失败。`;
+    msg = `${time}\n${i18n.status.failed}`;
   } else {
     msg = `${time}\n`+vMsg;
   }
@@ -73,10 +68,7 @@ async function getStatus(ctx: Context, session: any) {
 }
 // 指令 Random
 async function getRandom(ctx: Context, session: any, min: number, max: number) {
-  ctx.logger.info("Got: "+session.text('.message', {
-    platform: session.platform,
-    selfId: session.selfId,
-  }));
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: string;
@@ -88,27 +80,57 @@ async function getRandom(ctx: Context, session: any, min: number, max: number) {
   // 生成随机数
   min = Math.ceil(min);
   max = Math.floor(max);
-  msg = `${time}\n生成的随机数：`+(Math.floor(Math.random() * (max - min + 1)) + min)+`（${min},${max}）`;
+  msg = `${time}\n${i18n.random.sc}`+(Math.floor(Math.random() * (max - min + 1)) + min)+`（${min},${max}）`;
   ctx.logger.info("Sent: "+msg)
   return msg;
 }
 // 指令 Info
 async function getInfo(ctx: Context, session: any) {
-  ctx.logger.info("Got: "+session.text('.message', {
-    platform: session.platform,
-    selfId: session.selfId,
-  }));
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg = await readInfoFile();
   // 判断是否读取成功
   if (!msg.includes("基沃托斯·工业革命")){
     ctx.logger.error("Error: "+msg)
-    msg = `${time}\n读取信息失败`;
+    msg = `${time}\n${i18n.info.failed}`;
   } else {
     msg = msg.replace("&time;",time);
   }
   ctx.logger.info("Sent: "+msg)
+  return msg;
+}
+// 指令 cx
+async function getRW(ctx: Context, session: any) {
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  // 设立必要变量
+  let msg: string;
+  let data : string;
+  // 获取香港时区当前时间
+  const time = getHongKongTime();
+  try {
+    // 发送请求
+    const response = await fetchWithTimeout('https://api.tasaed.top/rw/', {}, 8000); // 8秒超时
+    // 判断是否成功
+    if (response.ok) {
+      data = await response.text();
+      ctx.logger.info("Server data: "+data);
+      // 发送消息
+      msg = `${time}\n${data}`;
+      ctx.logger.info("Sent: "+msg)
+    } else {
+      // 请求失败
+      data = await response.text();
+      ctx.logger.error(`Error fetching data: ${data}`);
+      msg = `${time}\n${i18n.rw.failed1}`;
+      ctx.logger.info("Sent: "+msg)
+    }
+  } catch (err) {
+    // 报错
+    ctx.logger.error(`Request error:  ${err.message}`);
+    msg = `${time}\n${i18n.rw.failed2}`;
+    ctx.logger.info("Sent: "+msg)
+  }
   return msg;
 }
 
@@ -129,5 +151,9 @@ export function apply(ctx: Context) {
   ctx.command('info',"机器人信息")
     .action(({ session }) => {
       return getInfo(ctx,session);
+    })
+  ctx.command('rw',"随机名言名句")
+    .action(({ session }) => {
+      return getRW(ctx,session);
     })
 }

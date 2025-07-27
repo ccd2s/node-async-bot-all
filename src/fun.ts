@@ -1,5 +1,6 @@
 import os from 'os';
 import {version} from '../package.json';
+import i18n from '../res/i18n.yaml';
 
 // 获取系统名称
 function getSystemName(): string {
@@ -33,7 +34,7 @@ async function getCpuUsage(): Promise<number> {
 export async function getSystemUsage() {
   let info: string;
   try {
-    info = `系统名称: ${getSystemName()}\nCPU使用率: ${await getCpuUsage()}%\n内存使用率: ${getMemoryUsage()}%`;
+    info = `${i18n.status.name}${getSystemName()}\n${i18n.status.cpu}${await getCpuUsage()}%\n${i18n.status.memory}${getMemoryUsage()}%`;
   } catch (error) {
     info = error.message;
   }
