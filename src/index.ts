@@ -64,6 +64,7 @@ async function getStatus(ctx: Context, session: any) {
   ctx.logger.info("Sent: "+msg)
   return msg;
 }
+// 指令 Random
 async function getRandom(ctx: Context, session: any, min: number, max: number) {
   ctx.logger.info("Got: "+session.text('.message', {
     platform: session.platform,
