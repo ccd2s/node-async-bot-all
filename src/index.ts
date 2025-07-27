@@ -77,7 +77,7 @@ async function getRandom(ctx: Context, session: any, min: number, max: number) {
   }
   min = Math.ceil(min);
   max = Math.floor(max);
-  msg = `${time}\n`+Math.floor(Math.random() * (max - min + 1)) + min;
+  msg = `${time}\n生成的随机数：`+(Math.floor(Math.random() * (max - min + 1)) + min)+`（${min},${max}）`;
   ctx.logger.info("Sent: "+msg)
   return msg;
 }
@@ -92,7 +92,7 @@ export function apply(ctx: Context) {
     .action(({ session }) => {
       return getStatus(ctx,session);
     })
-  ctx.command('random [arg1:number] [arg2:number]',"随机数生成器，缺少参数时默认生成 0-10000 的随机数。")
+  ctx.command('random [最小数:number] [最大数:number]',"随机数生成器，缺少参数时默认生成 0-10000 的随机数。")
     .action(({ session },min,max) => {
       return getRandom(ctx,session,min,max);
     })
