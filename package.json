@@ -1,7 +1,7 @@
 {
-  "name": "plugin-node-async-bot-all",
+  "name": "koishi-plugin-node-async-bot-all",
   "description": "插件",
-  "version": "0.0.1",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,6 +14,10 @@
     "koishi",
     "plugin"
   ],
+  "koishi": {
+    "preview": true,
+    "hidden": true
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ccd2s/node-async-bot-all"

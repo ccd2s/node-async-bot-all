@@ -10,11 +10,7 @@ async function getServer(ctx: Context, session: any) {
   let error = "";
   ctx.logger.info("Got: "+session.text('.message', {
     platform: session.platform,
-    messageId: session.quote.id,
-    guildId: session.guildId,
     selfId: session.selfId,
-    userId: session.quote.user?.id,
-    channelId: session.quote.channel?.id
   }));
   const time = getHongKongTime();
   try {
