@@ -1,4 +1,5 @@
 import os from 'os';
+import {version} from '../package.json';
 
 // 获取系统名称
 function getSystemName(): string {
@@ -92,4 +93,19 @@ export async function fetchWithTimeout(url: string, options = {}, timeout = 5000
       throw error; // 其他错误（如网络问题）
     }
   }
+}
+// 读取信息文件
+export async function readInfoFile(): Promise<string> {
+  const fs = require('node:fs/promises');
+  const path = require('path');
+  let info: string;
+  try{
+    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
+    info = await fs.readFile(aPath, 'utf8');
+    info = info.toString()
+      .replace("&version;",version);
+  } catch (e) {
+    info = e.message;
+  }
+  return info;
 }
