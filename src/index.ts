@@ -6,7 +6,7 @@ export const name = 'node-async-bot-all'
 
 // 指令 cx
 async function getServer(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: string;
   let dataError : string;
@@ -31,6 +31,9 @@ async function getServer(ctx: Context, session: any) {
         try {
           const vError = JSON.parse(dataError);
           error = vError['data'];
+          if (error.includes("Connection refused")) {
+            error = i18n.cx.close;
+          }
         } catch (e) {
           if(dataError.includes("CDN节点请求源服务器超时")){
             error = i18n.cx.timeout;
@@ -57,7 +60,7 @@ async function getServer(ctx: Context, session: any) {
 }
 // 指令 Status
 async function getStatus(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: string;
@@ -74,7 +77,7 @@ async function getStatus(ctx: Context, session: any) {
 }
 // 指令 Random
 async function getRandom(ctx: Context, session: any, min: number, max: number) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: string;
@@ -92,7 +95,7 @@ async function getRandom(ctx: Context, session: any, min: number, max: number) {
 }
 // 指令 Info
 async function getInfo(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg = await readInfoFile();
@@ -106,9 +109,9 @@ async function getInfo(ctx: Context, session: any) {
   ctx.logger.info("Sent: "+msg)
   return msg;
 }
-// 指令 cx
+// 指令 RW
 async function getRW(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"`);
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: string;
   let data : string;

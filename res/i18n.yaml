@@ -9,6 +9,7 @@ cx:
   timeout: 请求超时。
   later: 请稍后重试。
   unknown: 未知错误。
+  close: 服务器已关闭。
 status:
   failed: 状态获取失败。
   name: 系统名称：

@@ -43,26 +43,20 @@ export async function getSystemUsage() {
 
 // 获取香港时间
 export function getHongKongTime(): string {
-  const date = new Date();
-  const formatter = new Intl.DateTimeFormat('en', {
-    timeZone: 'Asia/Hong_Kong',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
+  const now = new Date();
+  // 香港时区为 UTC+8（无夏令时）
+  const hkOffset = 8 * 60; // 分钟偏移量
+  const hkTime = new Date(now.getTime() + (hkOffset + now.getTimezoneOffset()) * 60000);
 
-  const parts = formatter.formatToParts(date);
-  const partMap: Record<string, string> = {};
-
-  parts.forEach(part => {
-    partMap[part.type] = part.value;
-  });
-
-  return `${partMap.year}-${partMap.month}-${partMap.day} ${partMap.hour}:${partMap.minute}:${partMap.second}`;
+  return [
+    hkTime.getFullYear(),
+    (hkTime.getMonth() + 1).toString().padStart(2, '0'),
+    hkTime.getDate().toString().padStart(2, '0')
+  ].join('-') + ' ' + [
+    hkTime.getHours().toString().padStart(2, '0'),
+    hkTime.getMinutes().toString().padStart(2, '0'),
+    hkTime.getSeconds().toString().padStart(2, '0')
+  ].join(':');
 }
 
 // 增加了请求超时的 fetch
