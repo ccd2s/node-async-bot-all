@@ -1,7 +1,7 @@
-import { Context } from 'koishi'
-import {getHongKongTime,fetchWithTimeout,getSystemUsage,readInfoFile} from './fun'
+import { Context } from 'koishi';
+import {getHongKongTime,fetchWithTimeout,getSystemUsage,readInfoFile} from './fun';
 
-export const name = 'node-async-bot-all'
+export const name = 'node-async-bot-all';
 
 // 指令 cx
 async function getServer(ctx: Context, session: any) {
@@ -13,7 +13,7 @@ async function getServer(ctx: Context, session: any) {
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  if (session.event.guild.id=="757729218" || session.event.guild.id=="#"){
+  if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162"){
     try {
       // 发送请求
       const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000); // 8秒超时
@@ -32,14 +32,17 @@ async function getServer(ctx: Context, session: any) {
         ctx.logger.info("Sent:");
         ctx.logger.info(msg);
       } else {
+        // 请求错误
         dataError = await response.text();
         try {
           const vError = JSON.parse(dataError);
           error = vError['data'];
+          // 服务器关闭
           if (error.includes("Connection refused")) {
             error = session.text('.close');
           }
         } catch (e) {
+          // CDN超时或未知
           if(dataError.includes("CDN节点请求源服务器超时")){
             error = session.text('.timeout');
           } else {
@@ -47,6 +50,7 @@ async function getServer(ctx: Context, session: any) {
           }
         }
         ctx.logger.error(`Error fetching data: ${dataError}`);
+        // 发送消息
         msg = {
           "time": time,
           "data": error,
@@ -58,6 +62,7 @@ async function getServer(ctx: Context, session: any) {
     } catch (err) {
       // 报错
       ctx.logger.error(`Request error:  ${err.message}`);
+      // 发送消息
       msg = {
         "time": time,
         "data": session.text('.error'),
@@ -68,10 +73,11 @@ async function getServer(ctx: Context, session: any) {
     }
   }
   else {
+    // 群聊不在白名单中，发送消息
     msg = {
       "time": time,
       "success": 2
-    }
+    };
     ctx.logger.info("Sent:");
     ctx.logger.info(msg);
   }
@@ -147,14 +153,14 @@ async function getInfo(ctx: Context, session: any) {
       "time" : time,
       "data" : data,
       "success" : 1
-    }
+    };
   } else {
     data = data.replace("&time;",time);
     msg = {
       "time" : time,
       "data" : data,
       "success" : 0
-    }
+    };
   }
   ctx.logger.info("Sent:");
   ctx.logger.info(msg);
@@ -181,7 +187,7 @@ async function getRW(ctx: Context, session: any) {
         "time" : time,
         "data" : data,
         "success" : 0
-      }
+      };
       ctx.logger.info("Sent:");
       ctx.logger.info(msg);
     } else {
@@ -191,7 +197,7 @@ async function getRW(ctx: Context, session: any) {
       msg = {
         "time" : time,
         "success" : 1
-      }
+      };
       ctx.logger.info("Sent:");
       ctx.logger.info(msg);
     }
@@ -201,7 +207,7 @@ async function getRW(ctx: Context, session: any) {
     msg = {
       "time" : time,
       "success" : 2
-    }
+    };
     ctx.logger.info("Sent:");
     ctx.logger.info(msg);
   }

@@ -1,15 +1,19 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
   "description": "NodeAsync Bot插件（自用）",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "contributors": [
+    "ccd2s <tasaedem@outlook.com>"
+  ],
   "files": [
     "lib",
     "dist",
     "res"
   ],
   "license": "AGPL-3.0",
+  "homepage": "https://www.tasaed.top",
   "keywords": [
     "chatbot",
     "koishi",
@@ -21,13 +25,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ccd2s/node-async-bot-all"
+    "url": "https://github.com/ccd2s/node-async-bot-all"
   },
   "devDependencies": {
     "@koishijs/client": "^5.30.4"
   },
   "peerDependencies": {
-    "@koishijs/plugin-console": "^5.30.4",
     "@koishijs/plugin-help": "^2.4.5",
     "koishi": "^4.18.7"
   }
