@@ -1,6 +1,5 @@
 import os from 'os';
 import {version} from '../package.json';
-import i18n from '../res/i18n.yaml';
 
 // 获取系统名称
 function getSystemName(): string {
@@ -32,11 +31,19 @@ async function getCpuUsage(): Promise<number> {
 
 // 主函数
 export async function getSystemUsage() {
-  let info: string;
+  let info: object;
   try {
-    info = `${i18n.status.name}${getSystemName()}\n${i18n.status.cpu}${await getCpuUsage()}%\n${i18n.status.memory}${getMemoryUsage()}%`;
+    info = {
+      "name": getSystemName(),
+      "cpu": await getCpuUsage()+"%",
+      "memory": getMemoryUsage()+"%",
+      "success": 0
+    };
   } catch (error) {
-    info = error.message;
+    info = {
+      "data": error.message,
+      "success": 1
+    };
   }
   return info;
 }

@@ -1,0 +1,61 @@
+commands:
+  cx:
+    description: 查询服务器当前人数。
+    messages:
+      msg: |-
+        {time}
+        【服务器当前人数】
+        ➣ {version}：{players}
+        进服指南请在群公告中查看。
+      forbidden: |-
+        {time}
+        此指令不允许在本群使用。
+      failed: |-
+        {time}
+        查询失败：{data}
+        请稍后重试。
+      timeout: 请求超时。
+      close: 服务器已关闭。
+      error: 执行错误。
+      unknown: 未知错误。
+  status:
+    description: 查询机器人状态。
+    messages:
+      msg: |-
+        {time}
+        系统名称：{name}
+        CPU使用率：{cpu}
+        内存使用率：{memory}
+      failed: |-
+        {time}
+        状态获取失败。
+  random:
+    description: 随机数生成器。
+    usage: |-
+      缺少参数时默认生成 0-10000 的随机数。
+      使用示例：
+    examples: random 1 128 生成1到128范围的随机数
+    messages:
+      msg: |-
+        {time}
+        生成的随机数：{data}
+  info:
+    description: 查询机器人信息。
+    messages:
+      msg: |-
+        {data}
+      failed: |-
+        {time}
+        读取信息失败。
+  rw:
+    description: 随机名言名句。
+    messages:
+      msg: |-
+        {time}
+        {data}
+      failed1: |-
+        {time}
+        获取失败（1）。
+      failed2: |-
+        {time}
+        获取失败（2）。
