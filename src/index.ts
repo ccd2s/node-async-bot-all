@@ -1,5 +1,16 @@
-import { Context } from 'koishi';
-import {getHongKongTime,fetchWithTimeout,getSystemUsage,readInfoFile} from './fun';
+import { Context,h } from 'koishi';
+import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, getAudioPath} from './fun';
+import SilkService from 'koishi-plugin-silk';
+import fs from 'fs';
+
+export const inject = ['silk'] as const;
+
+// 扩展 Context 类型
+declare module 'koishi' {
+  interface Context {
+    silk: SilkService;
+  }
+}
 
 export const name = 'node-async-bot-all';
 
@@ -263,6 +274,63 @@ export function apply(ctx: Context) {
       }
       else{
         return session.text('.failed2',rw);
+      }
+    });
+  ctx.command('cassie [名称:string]')
+    .action(async ({ session },name) => {
+      ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+      // 设立必要变量
+      const msg = {
+        time: getHongKongTime()
+      };
+      let type:number;
+      // 判断名称
+      switch (name){
+        case undefined:
+          type=1;
+          break;
+        case "mtfSpawn":
+          type=2;
+          break;
+        case "mtfSpawnNoScp":
+          type=3;
+          break;
+        default:
+          type=0;
+          break;
+      }
+      // 判断类型
+      if (type==0){
+        // 未知名称
+        ctx.logger.info("Sent: .unknown");
+        ctx.logger.info(msg);
+        return session.text('.unknown',msg);
+      } else if (type==1) {
+        // 列表
+        ctx.logger.info("Sent: .msg");
+        ctx.logger.info(msg);
+        return session.text('.msg',msg);
+      } else {
+        // 发送音频，先获取路径
+        const fullPath = await getAudioPath(name);
+        try {
+          // 转换 silk
+          const fileBuffer = await fs.promises.readFile(fullPath);
+          ctx.logger.info(fullPath);
+          const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
+          ctx.logger.info(wavInfo);
+          const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
+          const bufferToSend = Buffer.from(encodeResult.data);
+          const base64Data = bufferToSend.toString('base64');
+          ctx.logger.info("Sent: A audio file.");
+          return h('audio', { src: `base64://${base64Data}` });
+        } catch (e) {
+          // 报错
+          ctx.logger.error("发送失败：" + e.message);
+          ctx.logger.info("Sent: .failed");
+          ctx.logger.info(msg);
+          return session.text('.failed',msg);
+        }
       }
     });
 }

@@ -96,6 +96,7 @@ export async function fetchWithTimeout(url: string, options = {}, timeout = 5000
     }
   }
 }
+
 // 读取信息文件
 export async function readInfoFile(): Promise<string> {
   const fs = require('node:fs/promises');
@@ -110,4 +111,10 @@ export async function readInfoFile(): Promise<string> {
     info = e.message;
   }
   return info;
+}
+
+// Audio
+export async function getAudioPath(name: string): Promise<string> {
+  const path = require('path');
+  return path.resolve(__dirname, '..')+path.sep+"res"+path.sep+name+".wav";
 }
