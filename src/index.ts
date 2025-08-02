@@ -238,8 +238,8 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
     msg = {
       "time" : time,
       "data" : list
-        .map((fruit, index) => `${index + 1}. ${fruit}`) // 添加序号
-        .join('\n') // 换行分割
+        .map((fruit, index) => `${index + 1}. ${fruit}`) // 添加序号前缀
+        .join('\n') // 用换行符连接
       ,
       "success" : 1
     };
@@ -250,20 +250,27 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
     // 发送音频，先获取路径
     const fullPath = await getAudioPath(name);
     try {
-      // 转换 silk
       const fileBuffer = await fs.promises.readFile(fullPath);
       ctx.logger.info(fullPath);
-      const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
-      ctx.logger.info(wavInfo);
-      const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
-      const bufferToSend = Buffer.from(encodeResult.data);
-      const base64Data = bufferToSend.toString('base64');
-      ctx.logger.info("Sent: A audio file.");
-      msg = {
-        "time" : time,
-        "data" : base64Data,
-        "success" : 0
-      };
+      const bufferToSend = Buffer.from(fileBuffer);
+      if (!ctx.silk.isSilk(fileBuffer)){
+        msg = {
+          "time" : time,
+          "success" : 2
+        };
+        // 报错
+        ctx.logger.error("发送失败：非 .slk 文件");
+        ctx.logger.info("Sent: .failed");
+        ctx.logger.info(msg);
+      } else {
+        const base64Data = bufferToSend.toString('base64');
+        ctx.logger.info("Sent: A audio file.");
+        msg = {
+          "time" : time,
+          "data" : base64Data,
+          "success" : 0
+        };
+      }
       return msg;
     } catch (e) {
       msg = {
@@ -345,11 +352,27 @@ export function apply(ctx: Context) {
       if (cassie['success']==0){
         return h('audio', { src: `base64://${cassie['data']}` });
       } else if (cassie['success']==1){
-        return session.text('.msg',cassie);
+        return [`${session.text('.msg',cassie)}`];
       } else if (cassie['success']==2){
         return session.text('.failed',cassie);
       } else {
         return session.text('.unknown',cassie);
       }
     });
+/*
+  ctx.command('e [名称:string]')
+    .action(async ({ session },name) => {
+      const fullPath = await getAudioPath(name);
+      const fileBuffer = await fs.promises.readFile(fullPath);
+      const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
+      const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
+      try {
+        await fs.promises.writeFile(fullPath + ".slk", encodeResult.data);
+        const fileBuffer2 = await fs.promises.readFile(fullPath + ".slk");
+        return ctx.silk.isSilk(fileBuffer2);
+      } catch (e){
+        return e.message;
+      }
+    });
+*/
 }

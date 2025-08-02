@@ -115,7 +115,7 @@ export async function readInfoFile(): Promise<string> {
 
 // Audio
 export async function getAudioPath(name: string): Promise<string> {
-  return path.resolve(__dirname, '..')+path.sep+"res"+path.sep+name+".wav";
+  return path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slk"+path.sep+name+".slk";
 }
 
 // Audio 列表
