@@ -1,5 +1,7 @@
 import os from 'os';
 import {version} from '../package.json';
+import fs from 'fs';
+import path from 'path';
 
 // 获取系统名称
 function getSystemName(): string {
@@ -99,12 +101,10 @@ export async function fetchWithTimeout(url: string, options = {}, timeout = 5000
 
 // 读取信息文件
 export async function readInfoFile(): Promise<string> {
-  const fs = require('node:fs/promises');
-  const path = require('path');
   let info: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
-    info = await fs.readFile(aPath, 'utf8');
+    info = await fs.promises.readFile(aPath, 'utf8');
     info = info.toString()
       .replace("&version;",version);
   } catch (e) {
@@ -115,6 +115,14 @@ export async function readInfoFile(): Promise<string> {
 
 // Audio
 export async function getAudioPath(name: string): Promise<string> {
-  const path = require('path');
   return path.resolve(__dirname, '..')+path.sep+"res"+path.sep+name+".wav";
+}
+
+// Audio 列表
+export async function getAudioList() {
+  const listPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"list.txt";
+  const data = await fs.promises.readFile(listPath, 'utf-8');
+  return data
+    .split(/\r?\n/) // 分割行
+    .filter(Boolean) // 移除空行（等价于 line => line !== ''）
 }

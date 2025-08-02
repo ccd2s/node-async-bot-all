@@ -1,5 +1,5 @@
 import { Context,h } from 'koishi';
-import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, getAudioPath} from './fun';
+import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, getAudioPath, getAudioList} from './fun';
 import SilkService from 'koishi-plugin-silk';
 import fs from 'fs';
 
@@ -225,6 +225,69 @@ async function getRW(ctx: Context, session: any) {
   return msg;
 }
 
+// C.A.S.S.I.E. 指令
+async function getCASSIE(ctx: Context, session: any, name: string) {
+  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  // 设立必要变量
+  let msg: object;
+  const time = getHongKongTime();
+  const list = await getAudioList();
+  // 判断类型
+  if (name == undefined) {
+    // 列表
+    msg = {
+      "time" : time,
+      "data" : list
+        .map((fruit, index) => `${index + 1}. ${fruit}`) // 添加序号
+        .join('\n') // 换行分割
+      ,
+      "success" : 1
+    };
+    ctx.logger.info("Sent: .msg");
+    ctx.logger.info(msg);
+    return msg;
+  } else if (list.includes(name)) {
+    // 发送音频，先获取路径
+    const fullPath = await getAudioPath(name);
+    try {
+      // 转换 silk
+      const fileBuffer = await fs.promises.readFile(fullPath);
+      ctx.logger.info(fullPath);
+      const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
+      ctx.logger.info(wavInfo);
+      const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
+      const bufferToSend = Buffer.from(encodeResult.data);
+      const base64Data = bufferToSend.toString('base64');
+      ctx.logger.info("Sent: A audio file.");
+      msg = {
+        "time" : time,
+        "data" : base64Data,
+        "success" : 0
+      };
+      return msg;
+    } catch (e) {
+      msg = {
+        "time" : time,
+        "success" : 2
+      };
+      // 报错
+      ctx.logger.error("发送失败：" + e.message);
+      ctx.logger.info("Sent: .failed");
+      ctx.logger.info(msg);
+      return msg;
+    }
+  } else {
+    // 未知音频
+    msg = {
+      "time" : time,
+      "success" : 3
+    };
+    ctx.logger.info("Sent: .unknown");
+    ctx.logger.info(msg);
+    return msg;
+  }
+}
+
 // Main
 export function apply(ctx: Context) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'));
@@ -278,59 +341,15 @@ export function apply(ctx: Context) {
     });
   ctx.command('cassie [名称:string]')
     .action(async ({ session },name) => {
-      ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
-      // 设立必要变量
-      const msg = {
-        time: getHongKongTime()
-      };
-      let type:number;
-      // 判断名称
-      switch (name){
-        case undefined:
-          type=1;
-          break;
-        case "mtfSpawn":
-          type=2;
-          break;
-        case "mtfSpawnNoScp":
-          type=3;
-          break;
-        default:
-          type=0;
-          break;
-      }
-      // 判断类型
-      if (type==0){
-        // 未知名称
-        ctx.logger.info("Sent: .unknown");
-        ctx.logger.info(msg);
-        return session.text('.unknown',msg);
-      } else if (type==1) {
-        // 列表
-        ctx.logger.info("Sent: .msg");
-        ctx.logger.info(msg);
-        return session.text('.msg',msg);
+      const cassie = await getCASSIE(ctx,session,name);
+      if (cassie['success']==0){
+        return h('audio', { src: `base64://${cassie['data']}` });
+      } else if (cassie['success']==1){
+        return session.text('.msg',cassie);
+      } else if (cassie['success']==2){
+        return session.text('.failed',cassie);
       } else {
-        // 发送音频，先获取路径
-        const fullPath = await getAudioPath(name);
-        try {
-          // 转换 silk
-          const fileBuffer = await fs.promises.readFile(fullPath);
-          ctx.logger.info(fullPath);
-          const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
-          ctx.logger.info(wavInfo);
-          const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
-          const bufferToSend = Buffer.from(encodeResult.data);
-          const base64Data = bufferToSend.toString('base64');
-          ctx.logger.info("Sent: A audio file.");
-          return h('audio', { src: `base64://${base64Data}` });
-        } catch (e) {
-          // 报错
-          ctx.logger.error("发送失败：" + e.message);
-          ctx.logger.info("Sent: .failed");
-          ctx.logger.info(msg);
-          return session.text('.failed',msg);
-        }
+        return session.text('.unknown',cassie);
       }
     });
 }

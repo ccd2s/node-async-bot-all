@@ -69,8 +69,7 @@ commands:
       msg: |-
         {time}
         【播放列表】
-        1. mtfSpawn
-        2. mtfSpawnNoScp
+        {data}
       failed: |-
         {time}
         发送失败，请稍后重试。
