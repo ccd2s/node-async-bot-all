@@ -27,7 +27,7 @@ async function getServer(ctx: Context, session: any) {
   if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162"){
     try {
       // 发送请求
-      const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000); // 8秒超时
+      const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000,ctx); // 8秒超时
       // 判断是否成功
       if (response.ok) {
         data = await response.text();
@@ -38,6 +38,9 @@ async function getServer(ctx: Context, session: any) {
           "time": time,
           "players": data['players'],
           "version": data['version'],
+          "list": data['list']
+            .join(', '),
+          "protocol": data['protocol'],
           "success": 0
         };
         ctx.logger.info("Sent:");
@@ -51,6 +54,10 @@ async function getServer(ctx: Context, session: any) {
           // 服务器关闭
           if (error.includes("Connection refused")) {
             error = session.text('.close');
+          } else if (error.includes("No route to host")) {
+            error = session.text('.host');
+          } else if (error.includes("Connection timed out")) {
+            error = session.text('.timeout');
           }
         } catch (e) {
           // CDN超时或未知
@@ -188,7 +195,7 @@ async function getRW(ctx: Context, session: any) {
   const time = getHongKongTime();
   try {
     // 发送请求
-    const response = await fetchWithTimeout('https://api.tasaed.top/rw/', {}, 8000); // 8秒超时
+    const response = await fetchWithTimeout('https://api.tasaed.top/rw/', {}, 8000,ctx); // 8秒超时
     // 判断是否成功
     if (response.ok) {
       data = await response.text();
