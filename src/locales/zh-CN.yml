@@ -6,6 +6,8 @@ commands:
         {time}
         【服务器当前人数】
         ➣ {version}：{players}
+        ➣ 玩家列表：{list}
+        ➣ 协议版本：{protocol}
         进服指南请在群公告中查看。
       forbidden: |-
         {time}
@@ -18,6 +20,7 @@ commands:
       close: 服务器已关闭。
       error: 执行错误。
       unknown: 未知错误。
+      host: 没有到主机的路由。
   status:
     description: 查询机器人状态。
     messages:
