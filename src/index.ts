@@ -34,17 +34,30 @@ async function getServer(ctx: Context, session: any) {
         ctx.logger.info("Server data: "+data);
         // 发送消息
         data = JSON.parse(data);
-        msg = {
-          "time": time,
-          "players": data['players'],
-          "version": data['version'],
-          "list": data['list']
-            .join(', '),
-          "protocol": data['protocol'],
-          "success": 0
-        };
-        ctx.logger.info("Sent:");
-        ctx.logger.info(msg);
+        if (data['list']==null) {
+          msg = {
+            "time": time,
+            "players": data['players'],
+            "version": data['version'],
+            "protocol": data['protocol'],
+            "success": 3
+          };
+          ctx.logger.info("Sent:");
+          ctx.logger.info(msg);
+        }
+        else {
+          msg = {
+            "time": time,
+            "players": data['players'],
+            "version": data['version'],
+            "list": data['list']
+              .join(', '),
+            "protocol": data['protocol'],
+            "success": 0
+          };
+          ctx.logger.info("Sent:");
+          ctx.logger.info(msg);
+        }
       } else {
         // 请求错误
         dataError = await response.text();
@@ -312,8 +325,10 @@ export function apply(ctx: Context) {
         return session.text('.msg',cx);
       } else if (cx['success']==1) {
         return session.text('.failed',cx);
-      } else {
+      } else if (cx['success']==2) {
         return session.text('.forbidden',cx);
+      } else if (cx['success']==3) {
+        return session.text('.msgNoPlayer',cx);
       }
     });
   ctx.command('status')
