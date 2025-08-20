@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
   "description": "NodeAsync Bot插件（自用）",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "contributors": [
@@ -32,7 +32,7 @@
   },
   "peerDependencies": {
     "@koishijs/plugin-help": "^2.4.5",
-    "koishi-plugin-silk": "^2.0.1",
-    "koishi": "^4.18.7"
+    "koishi": "^4.18.7",
+    "koishi-plugin-silk": "^2.0.1"
   }
 }
