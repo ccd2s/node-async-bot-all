@@ -178,7 +178,7 @@ async function getInfo(ctx: Context, session: any) {
   let msg: object;
   let data = await readInfoFile();
   // 判断是否读取成功
-  if (!data.includes("基沃托斯·工业革命")){
+  if (!data.includes("&version;")){
     ctx.logger.error("Error: "+data);
     msg = {
       "time" : time,
