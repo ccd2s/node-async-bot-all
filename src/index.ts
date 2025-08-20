@@ -178,7 +178,7 @@ async function getInfo(ctx: Context, session: any) {
   let msg: object;
   let data = await readInfoFile();
   // 判断是否读取成功
-  if (!data.includes("&version;")){
+  if (!data.includes("&time;")){
     ctx.logger.error("Error: "+data);
     msg = {
       "time" : time,
