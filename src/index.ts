@@ -16,7 +16,8 @@ export const name = 'node-async-bot-all';
 
 // 指令 cx
 async function getServer(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('cx');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: object;
   let dataError : string;
@@ -27,11 +28,11 @@ async function getServer(ctx: Context, session: any) {
   if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162"){
     try {
       // 发送请求
-      const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000,ctx); // 8秒超时
+      const response = await fetchWithTimeout('https://api.tasaed.top/get/minecraftServer/', {}, 8000,log); // 8秒超时
       // 判断是否成功
       if (response.ok) {
         data = await response.text();
-        ctx.logger.info("Server data: "+data);
+        log.info("Server data: "+data);
         // 发送消息
         data = JSON.parse(data);
         if (data['list']==null) {
@@ -42,8 +43,8 @@ async function getServer(ctx: Context, session: any) {
             "protocol": data['protocol'],
             "success": 3
           };
-          ctx.logger.info("Sent:");
-          ctx.logger.info(msg);
+          log.info("Sent:");
+          log.info(msg);
         }
         else {
           msg = {
@@ -55,8 +56,8 @@ async function getServer(ctx: Context, session: any) {
             "protocol": data['protocol'],
             "success": 0
           };
-          ctx.logger.info("Sent:");
-          ctx.logger.info(msg);
+          log.info("Sent:");
+          log.info(msg);
         }
       } else {
         // 请求错误
@@ -80,27 +81,27 @@ async function getServer(ctx: Context, session: any) {
             error = session.text('.unknown');
           }
         }
-        ctx.logger.error(`Error fetching data: ${dataError}`);
+        log.error(`Error fetching data: ${dataError}`);
         // 发送消息
         msg = {
           "time": time,
           "data": error,
           "success": 1
         }
-        ctx.logger.info("Sent:");
-        ctx.logger.info(msg);
+        log.info("Sent:");
+        log.info(msg);
       }
     } catch (err) {
       // 报错
-      ctx.logger.error(`Request error:  ${err.message}`);
+      log.error(`Request error:  ${err.message}`);
       // 发送消息
       msg = {
         "time": time,
         "data": session.text('.error'),
         "success": 1
       }
-      ctx.logger.info("Sent:");
-      ctx.logger.info(msg);
+      log.info("Sent:");
+      log.info(msg);
     }
   }
   else {
@@ -109,22 +110,23 @@ async function getServer(ctx: Context, session: any) {
       "time": time,
       "success": 2
     };
-    ctx.logger.info("Sent:");
-    ctx.logger.info(msg);
+    log.info("Sent:");
+    log.info(msg);
   }
   return msg;
 }
 
 // 指令 Status
 async function getStatus(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('status');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
   const vMsg = await getSystemUsage();
   // 判断是否读取失败
   if (vMsg["success"]==1){
-    ctx.logger.error(vMsg);
+    log.error(vMsg);
     msg = {
       "time" : time,
       "data" : vMsg["data"],
@@ -139,14 +141,15 @@ async function getStatus(ctx: Context, session: any) {
       "success" : 0
     };
   }
-  ctx.logger.info("Sent:");
-  ctx.logger.info(msg);
+  log.info("Sent:");
+  log.info(msg);
   return msg;
 }
 
 // 指令 Random
 async function getRandom(ctx: Context, session: any, min: number, max: number) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('random');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
@@ -165,21 +168,22 @@ async function getRandom(ctx: Context, session: any, min: number, max: number) {
     "data" : data,
     "success" : 0
   }
-  ctx.logger.info("Sent:");
-  ctx.logger.info(msg);
+  log.info("Sent:");
+  log.info(msg);
   return msg;
 }
 
 // 指令 Info
 async function getInfo(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('info');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
   let data = await readInfoFile();
   // 判断是否读取成功
   if (!data.includes("&time;")){
-    ctx.logger.error("Error: "+data);
+    log.error("Error: "+data);
     msg = {
       "time" : time,
       "data" : data,
@@ -193,14 +197,15 @@ async function getInfo(ctx: Context, session: any) {
       "success" : 0
     };
   }
-  ctx.logger.info("Sent:");
-  ctx.logger.info(msg);
+  log.info("Sent:");
+  log.info(msg);
   return msg;
 }
 
 // 指令 RW
 async function getRW(ctx: Context, session: any) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('rw');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: object;
   let data : string;
@@ -208,46 +213,47 @@ async function getRW(ctx: Context, session: any) {
   const time = getHongKongTime();
   try {
     // 发送请求
-    const response = await fetchWithTimeout('https://api.tasaed.top/rw/', {}, 8000,ctx); // 8秒超时
+    const response = await fetchWithTimeout('https://api.tasaed.top/rw/', {}, 8000,log); // 8秒超时
     // 判断是否成功
     if (response.ok) {
       data = await response.text();
-      ctx.logger.info("Server data: "+data);
+      log.info("Server data: "+data);
       // 发送消息
       msg = {
         "time" : time,
         "data" : data,
         "success" : 0
       };
-      ctx.logger.info("Sent:");
-      ctx.logger.info(msg);
+      log.info("Sent:");
+      log.info(msg);
     } else {
       // 请求失败
       data = await response.text();
-      ctx.logger.error(`Error fetching data: ${data}`);
+      log.error(`Error fetching data: ${data}`);
       msg = {
         "time" : time,
         "success" : 1
       };
-      ctx.logger.info("Sent:");
-      ctx.logger.info(msg);
+      log.info("Sent:");
+      log.info(msg);
     }
   } catch (err) {
     // 报错
-    ctx.logger.error(`Request error:  ${err.message}`);
+    log.error(`Request error:  ${err.message}`);
     msg = {
       "time" : time,
       "success" : 2
     };
-    ctx.logger.info("Sent:");
-    ctx.logger.info(msg);
+    log.info("Sent:");
+    log.info(msg);
   }
   return msg;
 }
 
 // C.A.S.S.I.E. 指令
 async function getCASSIE(ctx: Context, session: any, name: string) {
-  ctx.logger.info(`Got: {"command":"${session.text('.message')}","form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  const log = ctx.logger('cassie');
+  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: object;
   const time = getHongKongTime();
@@ -263,15 +269,15 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
       ,
       "success" : 1
     };
-    ctx.logger.info("Sent: .msg");
-    ctx.logger.info(msg);
+    log.info("Sent: .msg");
+    log.info(msg);
     return msg;
   } else if (list.includes(name)) {
     // 发送音频，先获取路径
     const fullPath = await getAudioPath(name);
     try {
       const fileBuffer = await fs.promises.readFile(fullPath);
-      ctx.logger.info(fullPath);
+      log.info(fullPath);
       const bufferToSend = Buffer.from(fileBuffer);
       if (!ctx.silk.isSilk(fileBuffer)){
         msg = {
@@ -279,12 +285,12 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
           "success" : 2
         };
         // 报错
-        ctx.logger.error("发送失败：非 .slk 文件");
-        ctx.logger.info("Sent: .failed");
-        ctx.logger.info(msg);
+        log.error("发送失败：非 .slk 文件");
+        log.info("Sent: .failed");
+        log.info(msg);
       } else {
         const base64Data = bufferToSend.toString('base64');
-        ctx.logger.info("Sent: A audio file.");
+        log.info("Sent: A audio file.");
         msg = {
           "time" : time,
           "data" : base64Data,
@@ -298,9 +304,9 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
         "success" : 2
       };
       // 报错
-      ctx.logger.error("发送失败：" + e.message);
-      ctx.logger.info("Sent: .failed");
-      ctx.logger.info(msg);
+      log.error("发送失败：" + e.message);
+      log.info("Sent: .failed");
+      log.info(msg);
       return msg;
     }
   } else {
@@ -309,8 +315,8 @@ async function getCASSIE(ctx: Context, session: any, name: string) {
       "time" : time,
       "success" : 3
     };
-    ctx.logger.info("Sent: .unknown");
-    ctx.logger.info(msg);
+    log.info("Sent: .unknown");
+    log.info(msg);
     return msg;
   }
 }

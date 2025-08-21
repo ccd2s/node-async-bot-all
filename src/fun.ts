@@ -2,7 +2,6 @@ import os from 'os';
 import {version} from '../package.json';
 import fs from 'fs';
 import path from 'path';
-import {Context} from "koishi";
 
 // 获取系统名称
 function getSystemName(): string {
@@ -70,7 +69,7 @@ export function getHongKongTime(): string {
 }
 
 // 增加了请求超时的 fetch
-export async function fetchWithTimeout(url: string, options = {}, timeout = 5000, ctx: Context) {
+export async function fetchWithTimeout(url: string, options = {}, timeout = 5000, log: any) {
   // 1. 创建 AbortController 实例
   const controller = new AbortController();
 
@@ -88,12 +87,12 @@ export async function fetchWithTimeout(url: string, options = {}, timeout = 5000
 
     clearTimeout(timeoutId); // 请求成功，清除定时器
     // 返回状态
-    ctx.logger.info(`Fetch code: ${response.status}`);
+    log.info(`Fetch code: ${response.status}`);
     return response;
   } catch (error) {
     clearTimeout(timeoutId); // 确保定时器被清除
     // 报错
-    ctx.logger.error(`${error.name}: ${error.message}`);
+    log.error(`${error.name}: ${error.message}`);
     // 4. 区分超时错误和其他错误
     if (error.name === 'AbortError') {
       throw new Error("请求超时");
