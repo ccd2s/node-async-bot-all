@@ -23,6 +23,8 @@ commands:
         查询失败：{data}
         请稍后重试。
       timeout: 请求超时。
+      timeout2: 响应超时。
+      fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
       error: 执行错误。
       unknown: 未知错误。

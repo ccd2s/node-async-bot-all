@@ -72,6 +72,10 @@ async function getServer(ctx: Context, session: any) {
             error = session.text('.host');
           } else if (error.includes("Connection timed out")) {
             error = session.text('.timeout');
+          } else if (error.includes("Server returned too few data")) {
+            error = session.text('.fewData');
+          } else if (error.includes("Server read timed out")) {
+            error = session.text('.timeout2');
           }
         } catch (e) {
           // CDN超时或未知
