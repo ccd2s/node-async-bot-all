@@ -1,7 +1,7 @@
 import os from 'os';
-import {version} from '../package.json';
 import fs from 'fs';
 import path from 'path';
+import {Context} from "koishi";
 
 // 获取系统名称
 function getSystemName(): string {
@@ -31,7 +31,7 @@ async function getCpuUsage(): Promise<number> {
   });
 }
 
-// 主函数
+// 系统信息主函数
 export async function getSystemUsage() {
   let info: object;
   try {
@@ -103,13 +103,16 @@ export async function fetchWithTimeout(url: string, options = {}, timeout = 5000
 }
 
 // 读取信息文件
-export async function readInfoFile(): Promise<string> {
+export async function readInfoFile(ctx: Context): Promise<string> {
   let info: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
     info = await fs.promises.readFile(aPath, 'utf8');
     info = info.toString()
-      .replace("&version;",version);
+      .replace(
+        "&version;",
+        (await ctx.database.get("botData", "version"))[0].data
+      );
   } catch (e) {
     info = e.message;
   }
@@ -122,10 +125,23 @@ export async function getAudioPath(name: string): Promise<string> {
 }
 
 // Audio 列表
-export async function getAudioList() {
+export async function getAudioList(): Promise<string[]> {
   const listPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"list.txt";
   const data = await fs.promises.readFile(listPath, 'utf-8');
   return data
     .split(/\r?\n/) // 分割行
     .filter(Boolean) // 移除空行（等价于 line => line !== ''）
+}
+
+// 计算时间戳差值
+export function formatTimestampDiff(start: number, end: number): string {
+  // 获取绝对差值
+  const diff = Math.abs(end - start);
+
+  // 计算小时、分钟和秒
+  const hours = Math.floor(diff / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  const seconds = diff % 60;
+
+  return `${hours} 时 ${minutes} 分 ${seconds} 秒`;
 }

@@ -37,6 +37,7 @@ commands:
         系统名称：{name}
         CPU使用率：{cpu}
         内存使用率：{memory}
+        运行时间：{online}
       failed: |-
         {time}
         状态获取失败。
