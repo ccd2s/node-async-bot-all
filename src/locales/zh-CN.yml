@@ -34,9 +34,13 @@ commands:
     messages:
       msg: |-
         {time}
+        --- 系统状态 ---
         系统名称：{name}
         CPU使用率：{cpu}
         内存使用率：{memory}
+        --- 机器人状态 ---
+        昨日收/发消息数量：{msgCount}
+        机器人版本：{version}
         运行时间：{online}
       failed: |-
         {time}

@@ -1,14 +1,10 @@
 import { Context, Schema } from 'koishi';
 import {getServer, getStatus, getRandom, getInfo, getRW} from './commands';
-import SilkService from 'koishi-plugin-silk';
 import {version} from '../package.json';
 
-export const inject = ['silk','database'];
+export const inject = ['database'];
 
 declare module 'koishi' {
-  interface Context {
-    silk: SilkService;
-  }
   interface Tables {
     botData: botDataTables;
   }
@@ -27,6 +23,7 @@ export interface Config {
   rwAPI:string,
   timeout:number;
 }
+
 export const Config: Schema<Config> =
   Schema.intersect([
     Schema.object({

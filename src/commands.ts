@@ -1,8 +1,8 @@
-import { Context } from 'koishi';
-import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff} from './fun';
+import { Context, Session, Time } from 'koishi';
+import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff, getMsgCount} from './fun';
 
 // 指令 cx
-export async function getServer(ctx: Context, session: any) {
+export async function getServer(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('cx');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
@@ -108,7 +108,7 @@ export async function getServer(ctx: Context, session: any) {
 }
 
 // 指令 Status
-export async function getStatus(ctx: Context, session: any) {
+export async function getStatus(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('status');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
@@ -124,7 +124,7 @@ export async function getStatus(ctx: Context, session: any) {
       "success" : 1
     };
   } else {
-    log.info((await ctx.database.get("botData", "uptime"))[0].data)
+    const msgCount=getMsgCount(await ctx.database.get('analytics.message', {date:Time.getDateNumber()-1},['type','count']));
     msg = {
       "time" : time,
       "name": vMsg["name"],
@@ -133,8 +133,10 @@ export async function getStatus(ctx: Context, session: any) {
       "online":
         formatTimestampDiff(
           Number((await ctx.database.get("botData", "uptime"))[0].data),
-          (session.event.timestamp).toString().substring(0, 10)
+          Number((session.event.timestamp).toString().substring(0, 10))
         ),
+      "msgCount": `${msgCount['receive']}/${msgCount['send']}`,
+      "version": (await ctx.database.get("botData", "version"))[0].data,
       "success" : 0
     };
   }
@@ -144,7 +146,7 @@ export async function getStatus(ctx: Context, session: any) {
 }
 
 // 指令 Random
-export async function getRandom(ctx: Context, session: any, min: number, max: number) {
+export async function getRandom(ctx: Context, session: Session, min: number, max: number):Promise<Object> {
   const log = ctx.logger('random');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
@@ -171,7 +173,7 @@ export async function getRandom(ctx: Context, session: any, min: number, max: nu
 }
 
 // 指令 Info
-export async function getInfo(ctx: Context, session: any) {
+export async function getInfo(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('info');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
@@ -200,7 +202,7 @@ export async function getInfo(ctx: Context, session: any) {
 }
 
 // 指令 RW
-export async function getRW(ctx: Context, session: any) {
+export async function getRW(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('rw');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量

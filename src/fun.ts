@@ -1,7 +1,8 @@
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
-import {Context} from "koishi";
+import {Context, FlatPick} from "koishi";
+import Analytics from "@koishijs/plugin-analytics";
 
 // 获取系统名称
 function getSystemName(): string {
@@ -32,7 +33,7 @@ async function getCpuUsage(): Promise<number> {
 }
 
 // 系统信息主函数
-export async function getSystemUsage() {
+export async function getSystemUsage():Promise<Object> {
   let info: object;
   try {
     info = {
@@ -69,7 +70,7 @@ export function getHongKongTime(): string {
 }
 
 // 增加了请求超时的 fetch
-export async function fetchWithTimeout(url: string, options = {}, timeout = 5000, log: any) {
+export async function fetchWithTimeout(url: string, options = {}, timeout: number = 5000, log: any):Promise<Response> {
   // 1. 创建 AbortController 实例
   const controller = new AbortController();
 
@@ -130,4 +131,18 @@ export function formatTimestampDiff(start: number, end: number): string {
   const seconds = diff % 60;
 
   return `${hours} 时 ${minutes} 分 ${seconds} 秒`;
+}
+
+// 计算收发消息数量
+export function getMsgCount(array:FlatPick<Analytics.Message, "type" | "count">[]): Object {
+  let receive = 0;
+  let send = 0;
+  array.forEach((item:FlatPick<Analytics.Message, "type" | "count">) => {
+    if(item.type=='receive'){
+      receive=receive+item.count;
+    }else {
+      send=send+item.count;
+    }
+  });
+  return {"receive":receive,"send":send};
 }
