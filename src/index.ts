@@ -1,5 +1,5 @@
-import { Context, h, Schema } from 'koishi';
-import {getServer, getStatus, getRandom, getInfo, getRW, getCASSIE} from './commands';
+import { Context, Schema } from 'koishi';
+import {getServer, getStatus, getRandom, getInfo, getRW} from './commands';
 import SilkService from 'koishi-plugin-silk';
 import {version} from '../package.json';
 
@@ -108,33 +108,4 @@ export function apply(ctx: Context) {
         return session.text('.failed2',rw);
       }
     });
-  ctx.command('cassie [名称:string]')
-    .action(async ({ session },name) => {
-      const cassie = await getCASSIE(ctx,session,name);
-      if (cassie['success']==0){
-        return h('audio', { src: `base64://${cassie['data']}` });
-      } else if (cassie['success']==1){
-        return [`${session.text('.msg',cassie)}`];
-      } else if (cassie['success']==2){
-        return session.text('.failed',cassie);
-      } else {
-        return session.text('.unknown',cassie);
-      }
-    });
-/*
-  ctx.command('e [名称:string]')
-    .action(async ({ session },name) => {
-      const fullPath = await getAudioPath(name);
-      const fileBuffer = await fs.promises.readFile(fullPath);
-      const wavInfo = ctx.silk.getWavFileInfo(fileBuffer);
-      const encodeResult = await ctx.silk.encode(fileBuffer, wavInfo.fmt.sampleRate);
-      try {
-        await fs.promises.writeFile(fullPath + ".slk", encodeResult.data);
-        const fileBuffer2 = await fs.promises.readFile(fullPath + ".slk");
-        return ctx.silk.isSilk(fileBuffer2);
-      } catch (e){
-        return e.message;
-      }
-    });
-*/
 }

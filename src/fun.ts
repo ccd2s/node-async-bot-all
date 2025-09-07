@@ -119,20 +119,6 @@ export async function readInfoFile(ctx: Context): Promise<string> {
   return info;
 }
 
-// Audio
-export async function getAudioPath(name: string): Promise<string> {
-  return path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slk"+path.sep+name+".slk";
-}
-
-// Audio 列表
-export async function getAudioList(): Promise<string[]> {
-  const listPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"list.txt";
-  const data = await fs.promises.readFile(listPath, 'utf-8');
-  return data
-    .split(/\r?\n/) // 分割行
-    .filter(Boolean) // 移除空行（等价于 line => line !== ''）
-}
-
 // 计算时间戳差值
 export function formatTimestampDiff(start: number, end: number): string {
   // 获取绝对差值

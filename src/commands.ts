@@ -1,6 +1,5 @@
 import { Context } from 'koishi';
-import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, getAudioPath, getAudioList, formatTimestampDiff} from './fun';
-import fs from 'fs';
+import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff} from './fun';
 
 // 指令 cx
 export async function getServer(ctx: Context, session: any) {
@@ -246,75 +245,4 @@ export async function getRW(ctx: Context, session: any) {
     log.info(msg);
   }
   return msg;
-}
-
-// C.A.S.S.I.E. 指令
-export async function getCASSIE(ctx: Context, session: any, name: string) {
-  const log = ctx.logger('cassie');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
-  // 设立必要变量
-  let msg: object;
-  const time = getHongKongTime();
-  const list = await getAudioList();
-  // 判断类型
-  if (name == undefined) {
-    // 列表
-    msg = {
-      "time" : time,
-      "data" : list
-        .map((fruit, index) => `${index + 1}. ${fruit}`) // 添加序号前缀
-        .join('\n') // 用换行符连接
-      ,
-      "success" : 1
-    };
-    log.info("Sent: .msg");
-    log.info(msg);
-    return msg;
-  } else if (list.includes(name)) {
-    // 发送音频，先获取路径
-    const fullPath = await getAudioPath(name);
-    try {
-      const fileBuffer = await fs.promises.readFile(fullPath);
-      log.info(fullPath);
-      const bufferToSend = Buffer.from(fileBuffer);
-      if (!ctx.silk.isSilk(fileBuffer)){
-        msg = {
-          "time" : time,
-          "success" : 2
-        };
-        // 报错
-        log.error("发送失败：非 .slk 文件");
-        log.info("Sent: .failed");
-        log.info(msg);
-      } else {
-        const base64Data = bufferToSend.toString('base64');
-        log.info("Sent: A audio file.");
-        msg = {
-          "time" : time,
-          "data" : base64Data,
-          "success" : 0
-        };
-      }
-      return msg;
-    } catch (e) {
-      msg = {
-        "time" : time,
-        "success" : 2
-      };
-      // 报错
-      log.error("发送失败：" + e.message);
-      log.info("Sent: .failed");
-      log.info(msg);
-      return msg;
-    }
-  } else {
-    // 未知音频
-    msg = {
-      "time" : time,
-      "success" : 3
-    };
-    log.info("Sent: .unknown");
-    log.info(msg);
-    return msg;
-  }
 }

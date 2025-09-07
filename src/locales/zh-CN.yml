@@ -71,20 +71,3 @@ commands:
       failed2: |-
         {time}
         获取失败（2）。
-  cassie:
-    description: 发送 C.A.S.S.I.E. 语音。
-    usage: |-
-      缺少参数时返回语音列表。
-      使用示例：
-    examples: cassie mtfSpawn 播放当机动特遣队重生并且SCP还活着时的语音。
-    messages:
-      msg: |-
-        {time}
-        【播放列表】
-        {data}
-      failed: |-
-        {time}
-        发送失败，请稍后重试。
-      unknown: |-
-        {time}
-        未知语音，发送 /cassie 查看播放列表。
