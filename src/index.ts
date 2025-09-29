@@ -30,7 +30,8 @@ export const Config: Schema<Config> =
       timeout: Schema.number().default(8000).description('超时时间（毫秒）')
     }).description('基础'),
     Schema.object({
-      cxAPI: Schema.string().default('https://api.tasaed.top/get/minecraftServer/').description('查询 API')
+      cxAPI: Schema.string().default('https://api.tasaed.top/get/minecraftServer/').description('查询 API'),
+      cxAPI2: Schema.string().default('https://api.tasaed.top/get/minecraftServer/bas.php').description('查询 API 2')
     }).description('查询'),
     Schema.object({
       rwAPI: Schema.string().default('https://api.tasaed.top/rw/').description('随机文本 API')

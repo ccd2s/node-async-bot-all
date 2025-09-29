@@ -4,14 +4,14 @@ commands:
     messages:
       msg: |-
         {time}
-        【服务器当前人数】
+        【MC服务器当前人数】
         ➣ {version}：{players}
         ➣ 玩家列表：{list}
         ➣ 协议版本：{protocol}
         进服指南请在群公告中查看。
       msgNoPlayer: |-
         {time}
-        【服务器当前人数】
+        【MC服务器当前人数】
         ➣ {version}：{players}
         ➣ 协议版本：{protocol}
         进服指南请在群公告中查看。

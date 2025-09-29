@@ -7,15 +7,21 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
   let msg: object;
+  let api: string;
   let dataError : string;
   let data : string;
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162"){
+  if (session.event.guild.id=="757729218" || session.event.guild.id=="1047732162" || session.event.guild.id=="917260212"){
     try {
+      if (session.event.guild.id=="917260212") {
+        api=ctx.config.cxAPI2
+      } else {
+        api=ctx.config.cxAPI
+      }
       // 发送请求
-      const response = await fetchWithTimeout(ctx.config.cxAPI, {}, ctx.config.timeout,log); // 8秒超时
+      const response = await fetchWithTimeout(api, {}, ctx.config.timeout,log); // 8秒超时
       // 判断是否成功
       if (response.ok) {
         data = await response.text();
