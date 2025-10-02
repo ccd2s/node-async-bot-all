@@ -19,7 +19,8 @@ export const name = 'node-async-bot-all';
 export const usage = '这是一个私有插件。';
 
 export interface Config {
-  cxAPI:string,
+  cxV2Group:Array<string>,
+  cxV2API:Array<string>,
   rwAPI:string,
   timeout:number;
 }
@@ -30,8 +31,8 @@ export const Config: Schema<Config> =
       timeout: Schema.number().default(8000).description('超时时间（毫秒）')
     }).description('基础'),
     Schema.object({
-      cxAPI: Schema.string().default('https://api.tasaed.top/get/minecraftServer/').description('查询 API'),
-      cxAPI2: Schema.string().default('https://api.tasaed.top/get/minecraftServer/bas.php').description('查询 API 2')
+      cxV2Group: Schema.array(String).description('查询 群，对应 API'),
+      cxV2API: Schema.array(String).description('查询 API，对应 群')
     }).description('查询'),
     Schema.object({
       rwAPI: Schema.string().default('https://api.tasaed.top/rw/').description('随机文本 API')
