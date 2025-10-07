@@ -115,8 +115,8 @@ export async function readInfoFile(ctx: Context): Promise<string> {
         "&version;",
         (await ctx.database.get("botData", "version"))[0].data
       );
-  } catch (e) {
-    info = e.message;
+  } catch (error) {
+    info = error.message;
   }
   return info;
 }

@@ -5,7 +5,7 @@ import { ConfigCxV2 } from "./index";
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('cx');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg : object;
   let dataError : string;
@@ -13,7 +13,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  const index = ctx.config.cxV2.findIndex((item:ConfigCxV2) => item.id === session.event.guild.id);
+  const index = ctx.config.cxV2.findIndex((item:ConfigCxV2) => item.id === session.event.guild?.id);
   if (index !== -1){
     const api = ctx.config.cxV2[index]['api']
     if (api==undefined){
@@ -136,7 +136,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
 // 指令 Status
 export async function getStatus(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('status');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
@@ -174,7 +174,7 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
 // 指令 Random
 export async function getRandom(ctx: Context, session: Session, min: number, max: number):Promise<Object> {
   const log = ctx.logger('random');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
@@ -201,7 +201,7 @@ export async function getRandom(ctx: Context, session: Session, min: number, max
 // 指令 Info
 export async function getInfo(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('info');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = getHongKongTime();
   let msg: object;
@@ -230,7 +230,7 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
 // 指令 RW
 export async function getRW(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('rw');
-  log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
   let data : string;

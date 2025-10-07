@@ -1,4 +1,4 @@
-import { Context, Schema } from 'koishi';
+import { Context, Schema, Session } from 'koishi';
 import {getServer, getStatus, getRandom, getInfo, getRW} from './commands';
 import {version} from '../package.json';
 
@@ -67,50 +67,50 @@ export function apply(ctx: Context) {
   // 指令注册
   ctx.command('cx')
     .action(async ({ session }) => {
-      const cx = await getServer(ctx, session);
+      const cx = await getServer(ctx, <Session>session);
       if (cx['success']==0) {
-        return session.text('.msg',cx);
+        return session?.text('.msg',cx);
       } else if (cx['success']==1) {
-        return session.text('.forbidden',cx);
+        return session?.text('.forbidden',cx);
       } else if (cx['success']==2) {
-        return session.text('.failed',cx);
+        return session?.text('.failed',cx);
       }
     });
   ctx.command('status')
     .action(async ({ session }) => {
-      const status = await getStatus(ctx, session);
+      const status = await getStatus(ctx, <Session>session);
       if (status['success']==0) {
-        return session.text('.msg',status);
+        return session?.text('.msg',status);
       } else {
-        return session.text('.failed',status);
+        return session?.text('.failed',status);
       }
     });
   ctx.command('random [最小数:number] [最大数:number]')
     .action(async ({ session },min,max) => {
-      const random = await getRandom(ctx,session,min,max);
-      return session.text('.msg',random);
+      const random = await getRandom(ctx,<Session>session,min,max);
+      return session?.text('.msg',random);
     });
   ctx.command('info')
     .action(async ({ session }) => {
-      const info = await getInfo(ctx,session);
+      const info = await getInfo(ctx,<Session>session);
       if (info['success']==0){
-        return session.text('.msg',info);
+        return session?.text('.msg',info);
       }
       else{
-        return session.text('.failed',info);
+        return session?.text('.failed',info);
       }
     });
   ctx.command('rw')
     .action(async ({ session }) => {
-      const rw = await getRW(ctx,session);
+      const rw = await getRW(ctx,<Session>session);
       if (rw['success']==0){
-        return session.text('.msg',rw);
+        return session?.text('.msg',rw);
       }
       else if (rw['success']==1){
-        return session.text('.failed1',rw);
+        return session?.text('.failed1',rw);
       }
       else{
-        return session.text('.failed2',rw);
+        return session?.text('.failed2',rw);
       }
     });
 }
