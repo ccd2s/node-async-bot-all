@@ -3,25 +3,27 @@ commands:
     description: 查询服务器当前人数。
     messages:
       msg: |-
-        {time}
-        【MC服务器当前人数】
+        {time}{list}
+        进服指南请在群公告中查看。
+      list: |-
+        【MC 服务器 {count}】
         ➣ {version}：{players}
         ➣ 玩家列表：{list}
         ➣ 协议版本：{protocol}
-        进服指南请在群公告中查看。
-      msgNoPlayer: |-
-        {time}
-        【MC服务器当前人数】
+      listNoPlayer: |-
+        【MC 服务器 {count}】
         ➣ {version}：{players}
         ➣ 协议版本：{protocol}
-        进服指南请在群公告中查看。
+      listFailed: |-
+        【MC 服务器 {count}】
+        ➣ 查询失败：{data}
+        ➣ 请稍后重试。
       forbidden: |-
         {time}
         此指令不允许在本群使用。
       failed: |-
         {time}
         查询失败：{data}
-        请稍后重试。
       timeout: 请求超时。
       timeout2: 响应超时。
       fewData: 服务端返回的数据过少。

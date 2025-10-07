@@ -1,117 +1,131 @@
 import { Context, Session, Time } from 'koishi';
-import {getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff, getMsgCount} from './fun';
+import { getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff, getMsgCount } from './fun';
+import { ConfigCxV2 } from "./index";
 
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('cx');
   log.info(`Got: {"form":"${session.event.guild.id}","user":"${session.event.user.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message.id}"}`);
   // 设立必要变量
-  let msg: object;
+  let msg : object;
   let dataError : string;
   let data : string;
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  if (ctx.config.cxV2Group.includes(session.event.guild.id)){
-    try {
-      const api = ctx.config.cxV2API[ctx.config.cxV2Group.indexOf(session.event.guild.id)]
-      if (api==undefined){
-        // 未指定查询 API
-        msg = {
-          "time": time,
-          "data": "未指定查询 API",
-          "success": 1
-        };
-        log.info("Sent:");
-        log.info(msg);
-        return msg;
-      }
-      // 发送请求
-      const response = await fetchWithTimeout(api, {}, ctx.config.timeout,log); // 8秒超时
-      // 判断是否成功
-      if (response.ok) {
-        data = await response.text();
-        log.info("Server data: "+data);
-        // 发送消息
-        data = JSON.parse(data);
-        if (data['list']==null) {
-          msg = {
-            "time": time,
-            "players": data['players'],
-            "version": data['version'],
-            "protocol": data['protocol'],
-            "success": 3
-          };
-          log.info("Sent:");
-          log.info(msg);
-        }
-        else {
-          msg = {
-            "time": time,
-            "players": data['players'],
-            "version": data['version'],
-            "list": data['list']
-              .join(', '),
-            "protocol": data['protocol'],
-            "success": 0
-          };
-          log.info("Sent:");
-          log.info(msg);
-        }
-      } else {
-        // 请求错误
-        dataError = await response.text();
-        try {
-          const vError = JSON.parse(dataError);
-          error = vError['data'];
-          // 服务器关闭
-          if (error.includes("Connection refused")) {
-            error = session.text('.close');
-          } else if (error.includes("No route to host")) {
-            error = session.text('.host');
-          } else if (error.includes("Connection timed out")) {
-            error = session.text('.timeout');
-          } else if (error.includes("Server returned too few data")) {
-            error = session.text('.fewData');
-          } else if (error.includes("Server read timed out")) {
-            error = session.text('.timeout2');
-          }
-        } catch (e) {
-          // CDN超时或未知
-          if(dataError.includes("CDN节点请求源服务器超时")){
-            error = session.text('.timeout');
-          } else {
-            error = session.text('.unknown');
-          }
-        }
-        log.error(`Error fetching data: ${dataError}`);
-        // 发送消息
-        msg = {
-          "time": time,
-          "data": error,
-          "success": 1
-        }
-        log.info("Sent:");
-        log.info(msg);
-      }
-    } catch (err) {
-      // 报错
-      log.error(`Request error:  ${err.message}`);
-      // 发送消息
+  const index = ctx.config.cxV2.findIndex((item:ConfigCxV2) => item.id === session.event.guild.id);
+  if (index !== -1){
+    const api = ctx.config.cxV2[index]['api']
+    if (api==undefined){
+      // 未指定查询 API
       msg = {
         "time": time,
-        "data": session.text('.error'),
-        "success": 1
-      }
+        "data": "未指定查询 API",
+        "success": 2
+      };
       log.info("Sent:");
       log.info(msg);
+      return msg;
     }
+    let count = 0;
+    let list = "";
+    for (const item of api) {
+      count++;
+      try {
+        // 发送请求
+        const response = await fetchWithTimeout(item, {}, ctx.config.timeout,log); // 8秒超时
+        // 判断是否成功
+        if (response.ok) {
+          data = await response.text();
+          log.info("Server data: "+data);
+          // 格式化服务器返回的数据
+          data = JSON.parse(data);
+          if (data['list']==null) {
+            // 无玩家
+            const temp = {
+              "count": count,
+              "players": data['players'],
+              "version": data['version'],
+              "protocol": data['protocol']
+            };
+            log.info(`Server ${count}:`);
+            log.info(temp);
+            list = list+"\n"+session.text('.listNoPlayer',temp);
+          }
+          else {
+            // 有玩家
+            const temp = {
+              "count": count,
+              "players": data['players'],
+              "version": data['version'],
+              "list": data['list']
+                .join(', '),
+              "protocol": data['protocol']
+            };
+            log.info(`Server ${count}:`);
+            log.info(temp);
+            list = list+"\n"+session.text('.list',temp);
+          }
+        } else {
+          // 请求错误
+          dataError = await response.text();
+          try {
+            const vError = JSON.parse(dataError);
+            error = vError['data'];
+            // 服务器关闭
+            if (error.includes("Connection refused")) {
+              error = session.text('.close');
+            } else if (error.includes("No route to host")) {
+              error = session.text('.host');
+            } else if (error.includes("Connection timed out")) {
+              error = session.text('.timeout');
+            } else if (error.includes("Server returned too few data")) {
+              error = session.text('.fewData');
+            } else if (error.includes("Server read timed out")) {
+              error = session.text('.timeout2');
+            }
+          } catch (e) {
+            // CDN超时或未知
+            if(dataError.includes("CDN节点请求源服务器超时")){
+              error = session.text('.timeout');
+            } else {
+              error = session.text('.unknown');
+            }
+          }
+          log.error(`Error fetching data: ${dataError}`);
+          // 发送消息
+          const temp = {
+            "count": count,
+            "data": error
+          };
+          log.info(`Server ${count}:`);
+          log.info(temp);
+          list = list+"\n"+session.text('.listFailed',temp);
+        }
+      } catch (err) {
+        // 报错
+        log.error(`Request error:  ${err.message}`);
+        // 发送消息
+        const temp = {
+          "count": count,
+          "data": session.text('.error')
+        };
+        log.info(`Server ${count}:`);
+        log.info(temp);
+        list = list+"\n"+session.text('.listFailed',temp);
+      }
+    }
+    msg = {
+      "time": time,
+      "list": list,
+      "success": 0
+    };
   }
   else {
     // 群聊不在白名单中，发送消息
     msg = {
       "time": time,
-      "success": 2
+      "success": 1
     };
     log.info("Sent:");
     log.info(msg);

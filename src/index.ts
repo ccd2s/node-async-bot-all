@@ -18,9 +18,13 @@ interface botDataTables {
 export const name = 'node-async-bot-all';
 export const usage = '这是一个私有插件。';
 
+export interface ConfigCxV2 {
+  id: string,
+  api: Array<string>
+}
+
 export interface Config {
-  cxV2Group:Array<string>,
-  cxV2API:Array<string>,
+  cxV2: Array<ConfigCxV2>,
   rwAPI:string,
   timeout:number;
 }
@@ -31,8 +35,12 @@ export const Config: Schema<Config> =
       timeout: Schema.number().default(8000).description('超时时间（毫秒）')
     }).description('基础'),
     Schema.object({
-      cxV2Group: Schema.array(String).description('查询 群，对应 API'),
-      cxV2API: Schema.array(String).description('查询 API，对应 群')
+      cxV2: Schema.array(
+        Schema.object({
+          id: Schema.string().required().description('查询 群'),
+          api: Schema.array(String).description('查询 API')
+        })
+      ).default([]).description('查询的 API 和 群')
     }).description('查询'),
     Schema.object({
       rwAPI: Schema.string().default('https://api.tasaed.top/rw/').description('随机文本 API')
@@ -63,11 +71,9 @@ export function apply(ctx: Context) {
       if (cx['success']==0) {
         return session.text('.msg',cx);
       } else if (cx['success']==1) {
-        return session.text('.failed',cx);
-      } else if (cx['success']==2) {
         return session.text('.forbidden',cx);
-      } else if (cx['success']==3) {
-        return session.text('.msgNoPlayer',cx);
+      } else if (cx['success']==2) {
+        return session.text('.failed',cx);
       }
     });
   ctx.command('status')

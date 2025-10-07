@@ -93,6 +93,7 @@ export async function fetchWithTimeout(url: string, options = {}, timeout: numbe
   } catch (error) {
     clearTimeout(timeoutId); // 确保定时器被清除
     // 报错
+    log.error(error);
     log.error(`${error.name}: ${error.message}`);
     // 4. 区分超时错误和其他错误
     if (error.name === 'AbortError') {
