@@ -1,5 +1,5 @@
-import { Context, Session, Time } from 'koishi';
-import { getHongKongTime, fetchWithTimeout, getSystemUsage, readInfoFile, formatTimestampDiff, getMsgCount } from './fun';
+import { Context, Session, Time, h, Random, sleep } from 'koishi';
+import { fetchWithTimeout, formatTimestampDiff, getHongKongTime, getMsgCount, getSystemUsage, readInfoFile } from './fun';
 import { ConfigCxV2 } from "./index";
 
 // 指令 cx
@@ -273,4 +273,25 @@ export async function getRW(ctx: Context, session: Session):Promise<Object> {
     log.info(msg);
   }
   return msg;
+}
+
+// 指令 BA
+export async function getBA(ctx: Context, session: Session):Promise<Number> {
+  // 日志
+  const log = ctx.logger('ba');
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  const random = new Random(() => Math.random());
+  // 获取香港时区当前时间
+  const time = getHongKongTime();
+  // 发送等待消息
+  const vid = await session.send(session.text(".wait", {"time": time}));
+  const ms = random.int(0, 1500);
+  const link: string = (random.pick(ctx.config.baAPI)) + `?cacheBuster=${random.real(1,2147483647)}`;
+  log.info(`Link: ${link}`);
+  // 等待防止阈值限制
+  await sleep(ms);
+  await session.send(h.image(link));
+  // 撤回消息
+  await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
+  return 0;
 }

@@ -77,3 +77,9 @@ commands:
       failed2: |-
         {time}
         获取失败（2）。
+  randomba:
+    description: 随机BA图。
+    messages:
+      wait: |-
+        {time}
+        请等待图片上传（可能较慢）。

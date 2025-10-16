@@ -1,6 +1,6 @@
 import { Context, Schema, Session } from 'koishi';
-import {getServer, getStatus, getRandom, getInfo, getRW} from './commands';
-import {version} from '../package.json';
+import { getServer, getStatus, getRandom, getInfo, getRW, getBA } from './commands';
+import { version } from '../package.json';
 
 export const inject = ['database'];
 
@@ -26,7 +26,8 @@ export interface ConfigCxV2 {
 export interface Config {
   cxV2: Array<ConfigCxV2>,
   rwAPI:string,
-  timeout:number;
+  timeout:number,
+  baAPI:string[];
 }
 
 export const Config: Schema<Config> =
@@ -44,7 +45,10 @@ export const Config: Schema<Config> =
     }).description('查询'),
     Schema.object({
       rwAPI: Schema.string().default('https://api.tasaed.top/rw/').description('随机文本 API')
-    }).description('随机文本')
+    }).description('随机文本'),
+    Schema.object({
+      baAPI: Schema.array(String).default(['https://rba.kanostar.top/portrait']).description('随机BA图 API')
+    }).description('随机BA图')
   ]).description('基础设置');
 
 // 插件注册
@@ -112,5 +116,9 @@ export function apply(ctx: Context) {
       else{
         return session?.text('.failed2',rw);
       }
+    });
+  ctx.command('randomBA')
+    .action(async ({ session }) => {
+      await getBA(ctx, <Session>session);
     });
 }

@@ -1,7 +1,7 @@
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
-import {Context, FlatPick} from "koishi";
+import { Context, FlatPick } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 
 // 获取系统名称
