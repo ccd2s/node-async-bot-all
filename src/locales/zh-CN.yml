@@ -92,7 +92,6 @@ commands:
         状态：{alive}
         丢包率：{packetLoss}
         返回IP：{ip}
-        {avg}
       forbidden: |-
         {time}
         此指令不允许在本群使用。

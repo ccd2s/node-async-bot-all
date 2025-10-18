@@ -340,7 +340,6 @@ export async function serverTest(ctx: Context, session: Session):Promise<Object>
     "host": host,
     "ip": tmp.ip,
     "alive": (tmp.alive==true) ? "正常" : "异常",
-    "packetLoss": tmp.packetLoss,
-    "avg": tmp.time
+    "packetLoss": tmp.packetLoss
   };
 }

@@ -150,7 +150,7 @@ export function getMsgCount(array:FlatPick<Analytics.Message, "type" | "count">[
 }
 
 // Ping
-export async function hostPing(host:string):Promise<{success: boolean, data?: any, ip?: string, alive?: boolean, time?: string, packetLoss?: string}> {
+export async function hostPing(host:string):Promise<{success: boolean, data?: any, ip?: string, alive?: boolean, packetLoss?: string}> {
   try {
     const tmp = await ping.promise.probe(host, {
       timeout: 5,
@@ -159,7 +159,6 @@ export async function hostPing(host:string):Promise<{success: boolean, data?: an
       "success":true,
       "ip":tmp.numeric_host,
       "alive":tmp.alive,
-      "time":(tmp.avg=="unknown") ? "请求超时。" : `平均延迟：${tmp.avg}ms`,
       "packetLoss":(tmp.packetLoss).toString()
     };
   } catch (error) {
