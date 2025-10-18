@@ -1,5 +1,5 @@
 import { Context, Schema, Session } from 'koishi';
-import { getServer, getStatus, getRandom, getInfo, getRW, getBA } from './commands';
+import {getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest} from './commands';
 import { version } from '../package.json';
 
 export const inject = ['database'];
@@ -48,7 +48,10 @@ export const Config: Schema<Config> =
     }).description('随机文本'),
     Schema.object({
       baAPI: Schema.array(String).default(['https://rba.kanostar.top/portrait']).description('随机BA图 API')
-    }).description('随机BA图')
+    }).description('随机BA图'),
+    Schema.object({
+      serverPing: Schema.dict(String).role('table').description('键：群号；值：Host')
+    }).description('服之测测（Ping）')
   ]).description('基础设置');
 
 // 插件注册
@@ -90,6 +93,7 @@ export function apply(ctx: Context) {
       }
     });
   ctx.command('random [最小数:number] [最大数:number]')
+    .alias('随机数')
     .action(async ({ session },min,max) => {
       const random = await getRandom(ctx,<Session>session,min,max);
       return session?.text('.msg',random);
@@ -118,7 +122,20 @@ export function apply(ctx: Context) {
       }
     });
   ctx.command('randomBA')
+    .alias('随机BA图')
     .action(async ({ session }) => {
       await getBA(ctx, <Session>session);
+    });
+  ctx.command('serverTest')
+    .alias('服之测测')
+    .action(async ({ session }) => {
+      const server = await serverTest(ctx, <Session>session);
+      if (server['success']==0) {
+        return session?.text('.msg',server);
+      } else if (server['success']==1) {
+        return session?.text('.forbidden',server);
+      } else {
+        return session?.text('.failed',server);
+      }
     });
 }

@@ -1,5 +1,13 @@
 import { Context, Session, Time, h, Random, sleep } from 'koishi';
-import { fetchWithTimeout, formatTimestampDiff, getHongKongTime, getMsgCount, getSystemUsage, readInfoFile } from './fun';
+import {
+  fetchWithTimeout,
+  formatTimestampDiff,
+  getHongKongTime,
+  getMsgCount,
+  getSystemUsage,
+  hostPing,
+  readInfoFile
+} from './fun';
 import { ConfigCxV2 } from "./index";
 
 // 指令 cx
@@ -294,4 +302,45 @@ export async function getBA(ctx: Context, session: Session):Promise<Number> {
   // 撤回消息
   await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
   return 0;
+}
+
+// 指令 serverTest
+export async function serverTest(ctx: Context, session: Session):Promise<Object> {
+  // 日志
+  const log = ctx.logger('serverTest');
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  // 获取香港时区当前时间
+  const time = getHongKongTime();
+  const host = ctx.config.serverPing[`${session.event.guild?.id}`];
+  if (host==undefined) {
+    return {
+      "success": 1,
+      "time": time
+    };
+  }
+  const tmp = await hostPing(host);
+  log.info(tmp);
+  if (!tmp.success){
+    return {
+      "success": 2,
+      "time": time,
+      "data": tmp.data,
+    };
+  }
+  if (tmp.ip==undefined){
+    return {
+      "success": 2,
+      "time": time,
+      "data": "未知的主机 "+host,
+    };
+  }
+  return {
+    "success": 0,
+    "time": time,
+    "host": host,
+    "ip": tmp.ip,
+    "alive": (tmp.alive==true) ? "正常" : "异常",
+    "packetLoss": tmp.packetLoss,
+    "avg": tmp.time
+  };
 }

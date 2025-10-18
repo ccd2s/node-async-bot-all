@@ -1,5 +1,6 @@
 import os from 'os';
 import fs from 'fs';
+import ping from 'ping';
 import path from 'path';
 import { Context, FlatPick } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
@@ -146,4 +147,25 @@ export function getMsgCount(array:FlatPick<Analytics.Message, "type" | "count">[
     }
   });
   return {"receive":receive,"send":send};
+}
+
+// Ping
+export async function hostPing(host:string):Promise<{success: boolean, data?: any, ip?: string, alive?: boolean, time?: string, packetLoss?: string}> {
+  try {
+    const tmp = await ping.promise.probe(host, {
+      timeout: 5,
+    });
+    return {
+      "success":true,
+      "ip":tmp.numeric_host,
+      "alive":tmp.alive,
+      "time":(tmp.avg=="unknown") ? "请求超时。" : `平均延迟：${tmp.avg}ms`,
+      "packetLoss":(tmp.packetLoss).toString()
+    };
+  } catch (error) {
+    return {
+      "success":false,
+      "data":error.message
+    };
+  }
 }

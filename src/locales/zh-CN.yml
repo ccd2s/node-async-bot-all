@@ -83,3 +83,19 @@ commands:
       wait: |-
         {time}
         请等待图片上传（可能较慢）。
+  servertest:
+    description: Ping服务器。
+    messages:
+      msg: |-
+        {time}
+        == Ping {host} ==
+        状态：{alive}
+        丢包率：{packetLoss}
+        返回IP：{ip}
+        {avg}
+      forbidden: |-
+        {time}
+        此指令不允许在本群使用。
+      failed: |-
+        {time}
+        Ping 失败：{data}
