@@ -38,6 +38,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
     let count = 0;
     let list = "";
     for (const item of api) {
+      const note = ctx.config.cxV2[index]['note'][count];
       count++;
       try {
         // 发送请求
@@ -54,7 +55,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "count": count,
               "players": data['players'],
               "version": data['version'],
-              "protocol": data['protocol']
+              "note": note ?? '无'
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -68,7 +69,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "version": data['version'],
               "list": data['list']
                 .join(', '),
-              "protocol": data['protocol']
+              "note": note ?? '无'
             };
             log.info(`Server ${count}:`);
             log.info(temp);

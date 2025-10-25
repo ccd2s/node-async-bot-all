@@ -9,11 +9,11 @@ commands:
         【MC 服务器 {count}】
         ➣ {version}：{players}
         ➣ 玩家列表：{list}
-        ➣ 协议版本：{protocol}
+        ➣ 备注：{note}
       listNoPlayer: |-
         【MC 服务器 {count}】
         ➣ {version}：{players}
-        ➣ 协议版本：{protocol}
+        ➣ 备注：{note}
       listFailed: |-
         【MC 服务器 {count}】
         ➣ 查询失败：{data}

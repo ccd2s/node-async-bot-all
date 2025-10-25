@@ -20,7 +20,8 @@ export const usage = '这是一个私有插件。';
 
 export interface ConfigCxV2 {
   id: string,
-  api: Array<string>
+  api: Array<string>,
+  note: Array<string>
 }
 
 export interface Config {
@@ -39,7 +40,8 @@ export const Config: Schema<Config> =
       cxV2: Schema.array(
         Schema.object({
           id: Schema.string().required().description('查询 群'),
-          api: Schema.array(String).description('查询 API')
+          api: Schema.array(String).description('查询 API'),
+          note: Schema.array(String).description('查询 备注')
         })
       ).default([]).description('查询的 API 和 群')
     }).description('查询'),
