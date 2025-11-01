@@ -1,4 +1,4 @@
-import { Context, Session, Time, h, Random, sleep } from 'koishi';
+import { Context, Session, h, sleep } from 'koishi';
 import {
   fetchWithTimeout,
   formatTimestampDiff,
@@ -6,7 +6,8 @@ import {
   getMsgCount,
   getSystemUsage,
   hostPing,
-  readInfoFile
+  readInfoFile,
+  random
 } from './fun';
 import { ConfigCxV2 } from "./index";
 
@@ -113,11 +114,11 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         }
       } catch (err) {
         // 报错
-        log.error(`Request error:  ${err.message}`);
+        log.error(`Request error: ${err.message}`);
         // 发送消息
         const temp = {
           "count": count,
-          "data": session.text('.error')
+          "data": (err.name === 'AbortError') ? session.text('.error') : err.message
         };
         log.info(`Server ${count}:`);
         log.info(temp);
@@ -159,7 +160,7 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
       "success" : 1
     };
   } else {
-    const msgCount=getMsgCount(await ctx.database.get('analytics.message', {date:Time.getDateNumber()-1},['type','count']));
+    const msgCount= await getMsgCount(ctx);
     msg = {
       "time" : time,
       "name": vMsg["name"],
@@ -276,6 +277,7 @@ export async function getRW(ctx: Context, session: Session):Promise<Object> {
     log.error(`Request error:  ${err.message}`);
     msg = {
       "time" : time,
+      "data" : (err.name === 'AbortError') ? session.text('.error') : err.message,
       "success" : 2
     };
     log.info("Sent:");
@@ -289,13 +291,12 @@ export async function getBA(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('ba');
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  const random = new Random(() => Math.random());
   // 获取香港时区当前时间
   const time = getHongKongTime();
   // 发送等待消息
   const vid = await session.send(session.text(".wait", {"time": time}));
-  const ms = random.int(0, 1500);
-  const link: string = (random.pick(ctx.config.baAPI)) + `?cacheBuster=${random.real(1,2147483647)}`;
+  const ms = random(0,0, 1500);
+  const link: string = (random(2,ctx.config.baAPI)) + `?cacheBuster=${random(1,1,2147483647)}`;
   log.info(`Link: ${link}`);
   // 等待防止阈值限制
   await sleep(ms);

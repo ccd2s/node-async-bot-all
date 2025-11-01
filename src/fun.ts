@@ -2,7 +2,7 @@ import os from 'os';
 import fs from 'fs';
 import ping from 'ping';
 import path from 'path';
-import { Context, FlatPick } from "koishi";
+import {Context, FlatPick, Random, Time} from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 
 // 获取系统名称
@@ -15,22 +15,44 @@ function getMemoryUsage(): number {
   const totalMemory = os.totalmem();
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
-  return Math.round((usedMemory / totalMemory) * 100);
+  return Math.round((usedMemory / totalMemory) * 10000) / 100;
 }
 
 // 获取CPU使用率（异步函数）
 async function getCpuUsage(): Promise<number> {
-  const startUsage = process.cpuUsage();  // 初始CPU使用量
+  const cpus1 = os.cpus();
 
-  // 等待1秒计算CPU使用率
-  return new Promise<number>(resolve => {
-    setTimeout(() => {
-      const endUsage = process.cpuUsage(startUsage);
-      const totalUsage = endUsage.user + endUsage.system;
-      const percentage = totalUsage / (1000 * 1000);  // 转换为百分比
-      resolve(Math.round(percentage * 100));
-    }, 1000);
-  });
+  // 等待 100ms 后再次采样
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  const cpus2 = os.cpus();
+
+  let totalIdle = 0;
+  let totalTick = 0;
+
+  for (let i = 0; i < cpus1.length; i++) {
+    const cpu1 = cpus1[i];
+    const cpu2 = cpus2[i];
+
+    // 计算第一次采样的总时间
+    const idle1 = cpu1.times.idle;
+    const total1 = Object.values(cpu1.times).reduce((acc, time) => acc + time, 0);
+
+    // 计算第二次采样的总时间
+    const idle2 = cpu2.times.idle;
+    const total2 = Object.values(cpu2.times).reduce((acc, time) => acc + time, 0);
+
+    // 计算差值
+    const idleDiff = idle2 - idle1;
+    const totalDiff = total2 - total1;
+
+    totalIdle += idleDiff;
+    totalTick += totalDiff;
+  }
+
+  // 计算使用率百分比
+  const usage = 100 - (100 * totalIdle / totalTick);
+  return Math.round(usage * 100) / 100; // 保留两位小数
 }
 
 // 系统信息主函数
@@ -55,52 +77,63 @@ export async function getSystemUsage():Promise<Object> {
 // 获取香港时间
 export function getHongKongTime(): string {
   const now = new Date();
-  // 香港时区为 UTC+8（无夏令时）
-  const hkOffset = 8 * 60; // 分钟偏移量
-  const hkTime = new Date(now.getTime() + (hkOffset + now.getTimezoneOffset()) * 60000);
 
-  return [
-    hkTime.getFullYear(),
-    (hkTime.getMonth() + 1).toString().padStart(2, '0'),
-    hkTime.getDate().toString().padStart(2, '0')
-  ].join('-') + ' ' + [
-    hkTime.getHours().toString().padStart(2, '0'),
-    hkTime.getMinutes().toString().padStart(2, '0'),
-    hkTime.getSeconds().toString().padStart(2, '0')
-  ].join(':');
+  // 使用 Intl.DateTimeFormat 获取香港时区的时间
+  const formatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Hong_Kong',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(now);
+  const dateObj: Record<string, string> = {};
+
+  parts.forEach(part => {
+    if (part.type !== 'literal') {
+      dateObj[part.type] = part.value;
+    }
+  });
+
+  // 构建格式化字符串
+  return `${dateObj.year}-${dateObj.month}-${dateObj.day} ${dateObj.hour}:${dateObj.minute}:${dateObj.second}`;
 }
 
 // 增加了请求超时的 fetch
 export async function fetchWithTimeout(url: string, options = {}, timeout: number = 5000, log: any):Promise<Response> {
-  // 1. 创建 AbortController 实例
+  // 创建 AbortController 用于取消请求
   const controller = new AbortController();
+  const { signal } = controller;
 
-  // 2. 设置超时定时器
+  // 合并 signal 到 options
+  const fetchOptions: RequestInit = {
+    ...options,
+    signal,
+  };
+
+  // 创建超时 Promise
   const timeoutId = setTimeout(() => {
-    controller.abort(); // 超时终止请求
+    controller.abort();
   }, timeout);
 
   try {
-    // 3. 发起请求并传入 signal
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal // 绑定终止信号
-    });
-
-    clearTimeout(timeoutId); // 请求成功，清除定时器
-    // 返回状态
+    const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
     log.info(`Fetch code: ${response.status}`);
     return response;
   } catch (error) {
-    clearTimeout(timeoutId); // 确保定时器被清除
+    clearTimeout(timeoutId);
     // 报错
     log.error(error);
     log.error(`${error.name}: ${error.message}`);
-    // 4. 区分超时错误和其他错误
     if (error.name === 'AbortError') {
-      throw new Error("请求超时");
+      throw new Error(`请求超时。(${timeout}ms)`);
     } else {
-      throw error; // 其他错误（如网络问题）
+      throw error;
     }
   }
 }
@@ -136,7 +169,9 @@ export function formatTimestampDiff(start: number, end: number): string {
 }
 
 // 计算收发消息数量
-export function getMsgCount(array:FlatPick<Analytics.Message, "type" | "count">[]): Object {
+export async function getMsgCount(ctx: Context): Promise<Object> {
+  const array = await ctx.database.get('analytics.message', {date:Time.getDateNumber()-1},['type','count']);
+  ctx.logger.info(Time.getDateNumber()-1);
   let receive = 0;
   let send = 0;
   array.forEach((item:FlatPick<Analytics.Message, "type" | "count">) => {
@@ -166,5 +201,25 @@ export async function hostPing(host:string):Promise<{success: boolean, data?: an
       "success":false,
       "data":error.message
     };
+  }
+}
+
+/** Random
+ * @param type
+ * 0:int 1:real 2:pick
+ * @param data
+ * @param data2
+ */
+export function random(type:number = 0,data:any,data2?:any):number {
+  const random = new Random(() => Math.random());
+  switch (type) {
+    case 0:
+      return random.int(data, data2);
+    case 1:
+      return random.real(data, data2);
+    case 2:
+      return random.pick(data);
+    default:
+      return 0;
   }
 }
