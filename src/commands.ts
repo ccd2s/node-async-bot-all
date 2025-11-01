@@ -56,8 +56,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "count": count,
               "players": data['players'],
               "version": data['version'],
-              "note": note ?? '无',
-              "type": "MC"
+              "note": note ?? '无'
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -71,8 +70,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "version": data['version'],
               "list": data['list']
                 .join(', '),
-              "note": note ?? '无',
-              "type": "MC"
+              "note": note ?? '无'
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -108,8 +106,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           // 发送消息
           const temp = {
             "count": count,
-            "data": error,
-            "type": "MC"
+            "data": error
           };
           log.info(`Server ${count}:`);
           log.info(temp);
@@ -121,8 +118,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         // 发送消息
         const temp = {
           "count": count,
-          "data": (err.name === 'AbortError') ? session.text('.error') : err.message,
-          "type": "MC"
+          "data": (err.name === 'AbortError') ? session.text('.error') : err.message
         };
         log.info(`Server ${count}:`);
         log.info(temp);

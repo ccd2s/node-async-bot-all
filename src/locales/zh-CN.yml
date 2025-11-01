@@ -6,16 +6,16 @@ commands:
         {time}{list}
         进服指南请在群公告中查看。
       list: |-
-        【{type} 服务器 {count}】
+        【MC 服务器 {count}】
         ➣ {version}：{players}
         ➣ 玩家列表：{list}
         ➣ 备注：{note}
       listNoPlayer: |-
-        【{type} 服务器 {count}】
+        【MC 服务器 {count}】
         ➣ {version}：{players}
         ➣ 备注：{note}
       listFailed: |-
-        【{type} 服务器 {count}】
+        【MC 服务器 {count}】
         ➣ 查询失败：{data}
         ➣ 请稍后重试。
       forbidden: |-
