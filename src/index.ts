@@ -74,7 +74,7 @@ export function apply(ctx: Context) {
     ]);
   });
   // 指令注册
-  ctx.command('cx')
+  ctx.command('cxMc')
     .action(async ({ session }) => {
       const cx = await getServer(ctx, <Session>session);
       if (cx['success']==0) {
@@ -124,7 +124,7 @@ export function apply(ctx: Context) {
       }
     });
   ctx.command('randomBA')
-    .alias('随机BA图')
+    .alias('随机ba图')
     .action(async ({ session }) => {
       await getBA(ctx, <Session>session);
     });

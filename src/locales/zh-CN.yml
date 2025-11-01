@@ -1,5 +1,5 @@
 commands:
-  cx:
+  cxmc:
     description: 查询服务器当前人数。
     messages:
       msg: |-
@@ -71,12 +71,13 @@ commands:
       msg: |-
         {time}
         {data}
+      error: 执行错误。
       failed1: |-
         {time}
         获取失败（1）。
       failed2: |-
         {time}
-        获取失败（2）。
+        获取失败（{data}）。
   randomba:
     description: 随机BA图。
     messages:
