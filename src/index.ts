@@ -1,5 +1,5 @@
 import { Context, Schema, Session } from 'koishi';
-import {getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest} from './commands';
+import {getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest, getSteam} from './commands';
 import { version } from '../package.json';
 
 export const inject = ['database'];
@@ -28,7 +28,8 @@ export interface Config {
   cxV2: Array<ConfigCxV2>,
   rwAPI:string,
   timeout:number,
-  baAPI:string[];
+  baAPI:string[],
+  steamAPI:string;
 }
 
 export const Config: Schema<Config> =
@@ -53,7 +54,10 @@ export const Config: Schema<Config> =
     }).description('随机BA图'),
     Schema.object({
       serverPing: Schema.dict(String).role('table').description('键：群号；值：Host')
-    }).description('服之测测（Ping）')
+    }).description('服之测测（Ping）'),
+    Schema.object({
+      steamAPI: Schema.string().default('https://api.tasaed.top/get/steamid/').description('转换 Steam ID API')
+    }).description('转换 Steam ID'),
   ]).description('基础设置');
 
 // 插件注册
@@ -74,7 +78,7 @@ export function apply(ctx: Context) {
     ]);
   });
   // 指令注册
-  ctx.command('cxMc')
+  ctx.command('cxGame')
     .action(async ({ session }) => {
       const cx = await getServer(ctx, <Session>session);
       if (cx['success']==0) {
@@ -138,6 +142,20 @@ export function apply(ctx: Context) {
         return session?.text('.forbidden',server);
       } else {
         return session?.text('.failed',server);
+      }
+    });
+  ctx.command('steamId <Steam 好友码（SteamID 3）:posint>')
+    .alias('steam')
+    .action(async ({ session },id) => {
+      if (id==null){
+        return session?.text('.null');
+      }
+      const steam = await getSteam(ctx, <Session>session, id);
+      if (steam['success']==0){
+        return session?.text('.msg',steam);
+      }
+      else{
+        return session?.text('.failed',steam);
       }
     });
 }

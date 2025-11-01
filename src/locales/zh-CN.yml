@@ -1,21 +1,21 @@
 commands:
-  cxmc:
+  cxgame:
     description: 查询服务器当前人数。
     messages:
       msg: |-
         {time}{list}
         进服指南请在群公告中查看。
       list: |-
-        【MC 服务器 {count}】
+        【{type} 服务器 {count}】
         ➣ {version}：{players}
         ➣ 玩家列表：{list}
         ➣ 备注：{note}
       listNoPlayer: |-
-        【MC 服务器 {count}】
+        【{type} 服务器 {count}】
         ➣ {version}：{players}
         ➣ 备注：{note}
       listFailed: |-
-        【MC 服务器 {count}】
+        【{type} 服务器 {count}】
         ➣ 查询失败：{data}
         ➣ 请稍后重试。
       forbidden: |-
@@ -99,3 +99,14 @@ commands:
       failed: |-
         {time}
         Ping 失败：{data}
+  steamid:
+    description: 将 Steam 好友码（SteamID 3）转为 SteamID 64。
+    messages:
+      msg: |-
+        {time}
+        转换结果：{data}
+      failed: |-
+        {time}
+        转换失败：{data}
+      null: |-
+        参数 Steam 好友码（SteamID 3） 不得为空。

@@ -56,7 +56,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "count": count,
               "players": data['players'],
               "version": data['version'],
-              "note": note ?? '无'
+              "note": note ?? '无',
+              "type": "MC"
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -70,7 +71,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "version": data['version'],
               "list": data['list']
                 .join(', '),
-              "note": note ?? '无'
+              "note": note ?? '无',
+              "type": "MC"
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -106,7 +108,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           // 发送消息
           const temp = {
             "count": count,
-            "data": error
+            "data": error,
+            "type": "MC"
           };
           log.info(`Server ${count}:`);
           log.info(temp);
@@ -118,7 +121,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         // 发送消息
         const temp = {
           "count": count,
-          "data": (err.name === 'AbortError') ? session.text('.error') : err.message
+          "data": (err.name === 'AbortError') ? session.text('.error') : err.message,
+          "type": "MC"
         };
         log.info(`Server ${count}:`);
         log.info(temp);
@@ -344,4 +348,56 @@ export async function serverTest(ctx: Context, session: Session):Promise<Object>
     "alive": (tmp.alive==true) ? "正常" : "异常",
     "packetLoss": tmp.packetLoss
   };
+}
+
+// 指令 SteamId
+export async function getSteam(ctx: Context, session: Session, id:number):Promise<Object> {
+  const log = ctx.logger('steamId');
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  // 设立必要变量
+  let msg: object;
+  let data : string;
+  // 获取香港时区当前时间
+  const time = getHongKongTime();
+  try {
+    // 发送请求
+    const response = await fetchWithTimeout(ctx.config.steamAPI+`?format=json&id=${id}`, {}, ctx.config.timeout,log);
+    // 判断是否成功
+    if (response.ok) {
+      data = await response.text();
+      log.info("Server data: "+data);
+      data = JSON.parse(data);
+      // 发送消息
+      msg = {
+        "time" : time,
+        "data" : data['data'],
+        "success" : 0
+      };
+      log.info("Sent:");
+      log.info(msg);
+    } else {
+      // 请求失败
+      data = await response.text();
+      log.error(`Error fetching data: ${data}`);
+      data = JSON.parse(data);
+      msg = {
+        "time" : time,
+        "data" : data['data'],
+        "success" : 1
+      };
+      log.info("Sent:");
+      log.info(msg);
+    }
+  } catch (err) {
+    // 报错
+    log.error(`Request error:  ${err.message}`);
+    msg = {
+      "time" : time,
+      "data" : (err.name === 'AbortError') ? session.text('.error') : err.message,
+      "success" : 2
+    };
+    log.info("Sent:");
+    log.info(msg);
+  }
+  return msg;
 }
