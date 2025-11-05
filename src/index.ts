@@ -1,5 +1,5 @@
 import { Context, Schema, Session } from 'koishi';
-import {getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest, getSteam} from './commands';
+import {getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest, getSteam, getMeme} from './commands';
 import { version } from '../package.json';
 
 export const inject = ['database'];
@@ -29,7 +29,8 @@ export interface Config {
   rwAPI:string,
   timeout:number,
   baAPI:string[],
-  steamAPI:string;
+  steamAPI:string,
+  memesAPI:string;
 }
 
 export const Config: Schema<Config> =
@@ -58,6 +59,9 @@ export const Config: Schema<Config> =
     Schema.object({
       steamAPI: Schema.string().default('https://api.tasaed.top/get/steamid/').description('转换 Steam ID API')
     }).description('转换 Steam ID'),
+    Schema.object({
+      memesAPI: Schema.string().description('群友 meme API')
+    }).description('群友 meme'),
   ]).description('基础设置');
 
 // 插件注册
@@ -151,6 +155,17 @@ export function apply(ctx: Context) {
         return session?.text('.null');
       }
       const steam = await getSteam(ctx, <Session>session, id);
+      if (steam['success']==0){
+        return session?.text('.msg',steam);
+      }
+      else{
+        return session?.text('.failed',steam);
+      }
+    });
+  ctx.command('meme')
+    .alias('memes')
+    .action(async ({ session }) => {
+      const steam = await getMeme(ctx, <Session>session);
       if (steam['success']==0){
         return session?.text('.msg',steam);
       }

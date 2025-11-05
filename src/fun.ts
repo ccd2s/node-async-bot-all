@@ -223,3 +223,38 @@ export function random(type:number = 0,data:any,data2?:any):number {
       return 0;
   }
 }
+
+export async function getHttp(log:any,url:string,timeout:number): Promise<{ success: boolean,data:object,error?:boolean }> {
+  let data : string;
+  try {
+    // 发送请求
+    const response = await fetchWithTimeout(url, {}, timeout, log);
+    // 判断是否成功
+    if (response.ok) {
+      data = await response.text();
+      log.info("Server data: "+data);
+      return {
+        "data":JSON.parse(data),
+        "success":true
+      };
+    } else {
+      // 请求失败
+      data = await response.text();
+      log.error(`Error fetching data: ${data}`);
+      data = JSON.parse(data);
+      return {
+        "data":JSON.parse(data),
+        "error":false,
+        "success":false
+      };
+    }
+  } catch (err) {
+    // 报错
+    log.error(`Request error:  ${err.message}`);
+    return {
+      "data":{"name":err.name,"message":err.message},
+      "error":true,
+      "success":false
+    };
+  }
+}

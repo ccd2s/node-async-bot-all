@@ -110,3 +110,15 @@ commands:
         转换失败：{data}
       null: |-
         参数 Steam 好友码（SteamID 3） 不得为空。
+      error: 执行错误。
+  meme:
+    description: 群友的怪话！
+    messages:
+      msg: |-
+        {time}
+        {image}
+        {title}
+      failed: |-
+        {time}
+        获取失败：{data}
+      error: 执行错误。

@@ -7,7 +7,7 @@ import {
   getSystemUsage,
   hostPing,
   readInfoFile,
-  random
+  random, getHttp
 } from './fun';
 import { ConfigCxV2 } from "./index";
 
@@ -243,45 +243,41 @@ export async function getRW(ctx: Context, session: Session):Promise<Object> {
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
-  let data : string;
+  let data : object;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  try {
-    // 发送请求
-    const response = await fetchWithTimeout(ctx.config.rwAPI, {}, ctx.config.timeout,log); // 8秒超时
-    // 判断是否成功
-    if (response.ok) {
-      data = await response.text();
-      log.info("Server data: "+data);
-      // 发送消息
+  // 发送请求
+  const response = await getHttp(log,ctx.config.rwAPI+"?format=json",ctx.config.timeout);
+  if (response.success) {
+    data = response.data;
+    // 发送消息
+    msg = {
+      "time" : time,
+      "data" : data['data'],
+      "success" : 0
+    };
+    log.info("Sent:");
+    log.info(msg);
+  } else {
+    if (response.error){
+      data = response.data;
       msg = {
         "time" : time,
-        "data" : data,
-        "success" : 0
+        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+        "success" : 2
       };
       log.info("Sent:");
       log.info(msg);
     } else {
-      // 请求失败
-      data = await response.text();
-      log.error(`Error fetching data: ${data}`);
+      data = response.data;
       msg = {
         "time" : time,
+        "data" : data['data'],
         "success" : 1
       };
       log.info("Sent:");
       log.info(msg);
     }
-  } catch (err) {
-    // 报错
-    log.error(`Request error:  ${err.message}`);
-    msg = {
-      "time" : time,
-      "data" : (err.name === 'AbortError') ? session.text('.error') : err.message,
-      "success" : 2
-    };
-    log.info("Sent:");
-    log.info(msg);
   }
   return msg;
 }
@@ -352,30 +348,33 @@ export async function getSteam(ctx: Context, session: Session, id:number):Promis
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
-  let data : string;
+  let data : object;
   // 获取香港时区当前时间
   const time = getHongKongTime();
-  try {
-    // 发送请求
-    const response = await fetchWithTimeout(ctx.config.steamAPI+`?format=json&id=${id}`, {}, ctx.config.timeout,log);
-    // 判断是否成功
-    if (response.ok) {
-      data = await response.text();
-      log.info("Server data: "+data);
-      data = JSON.parse(data);
-      // 发送消息
+  // 发送请求
+  const response = await getHttp(log,ctx.config.steamAPI+`?format=json&id=${id}`,ctx.config.timeout);
+  if (response.success) {
+    data = response.data;
+    // 发送消息
+    msg = {
+      "time" : time,
+      "data" : data['data'],
+      "success" : 0
+    };
+    log.info("Sent:");
+    log.info(msg);
+  } else {
+    if (response.error){
+      data = response.data;
       msg = {
         "time" : time,
-        "data" : data['data'],
-        "success" : 0
+        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+        "success" : 2
       };
       log.info("Sent:");
       log.info(msg);
     } else {
-      // 请求失败
-      data = await response.text();
-      log.error(`Error fetching data: ${data}`);
-      data = JSON.parse(data);
+      data = response.data;
       msg = {
         "time" : time,
         "data" : data['data'],
@@ -384,16 +383,52 @@ export async function getSteam(ctx: Context, session: Session, id:number):Promis
       log.info("Sent:");
       log.info(msg);
     }
-  } catch (err) {
-    // 报错
-    log.error(`Request error:  ${err.message}`);
+  }
+  return msg;
+}
+
+// 指令 Meme
+export async function getMeme(ctx: Context, session: Session):Promise<Object> {
+  const log = ctx.logger('getMeme');
+  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  // 设立必要变量
+  let msg: object;
+  let data : object;
+  // 获取香港时区当前时间
+  const time = getHongKongTime();
+  // 发送请求
+  const response = await getHttp(log,ctx.config.memesAPI,ctx.config.timeout);
+  if (response.success) {
+    data = response.data;
+    // 发送消息
     msg = {
       "time" : time,
-      "data" : (err.name === 'AbortError') ? session.text('.error') : err.message,
-      "success" : 2
+      "title" : data['data']['title'],
+      "image" : h.image(data['data']['image']),
+      "success" : 0
     };
     log.info("Sent:");
     log.info(msg);
+  } else {
+    if (response.error){
+      data = response.data;
+      msg = {
+        "time" : time,
+        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+        "success" : 1
+      };
+      log.info("Sent:");
+      log.info(msg);
+    } else {
+      data = response.data;
+      msg = {
+        "time" : time,
+        "data" : data['data'],
+        "success" : 1
+      };
+      log.info("Sent:");
+      log.info(msg);
+    }
   }
   return msg;
 }
