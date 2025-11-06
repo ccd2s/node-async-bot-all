@@ -2,7 +2,7 @@ import os from 'os';
 import fs from 'fs';
 import ping from 'ping';
 import path from 'path';
-import {Context, FlatPick, Random, Time} from "koishi";
+import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 
 // 获取系统名称

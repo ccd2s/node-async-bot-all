@@ -290,13 +290,13 @@ export async function getBA(ctx: Context, session: Session):Promise<Number> {
   // 获取香港时区当前时间
   const time = getHongKongTime();
   // 发送等待消息
-  const vid = await session.send(session.text(".wait", {"time": time}));
+  const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   const ms = random(0,0, 1500);
   const link: string = (random(2,ctx.config.baAPI)) + `?cacheBuster=${random(1,1,2147483647)}`;
   log.info(`Link: ${link}`);
   // 等待防止阈值限制
   await sleep(ms);
-  await session.send(h.image(link));
+  await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
   // 撤回消息
   await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
   return 0;
@@ -396,8 +396,20 @@ export async function getMeme(ctx: Context, session: Session):Promise<Object> {
   let data : object;
   // 获取香港时区当前时间
   const time = getHongKongTime();
+  const api = ctx.config.memesAPI[`${session.event.guild?.id}`]
+  if(api==undefined){
+    // 发送消息
+    msg = {
+      "time" : time,
+      "quote" : h.quote(session.messageId),
+      "success" : 2
+    };
+    log.info("Sent:");
+    log.info(msg);
+    return msg;
+  }
   // 发送请求
-  const response = await getHttp(log,ctx.config.memesAPI,ctx.config.timeout);
+  const response = await getHttp(log,api,ctx.config.timeout);
   if (response.success) {
     data = response.data;
     // 发送消息
@@ -405,6 +417,7 @@ export async function getMeme(ctx: Context, session: Session):Promise<Object> {
       "time" : time,
       "title" : data['data']['title'],
       "image" : h.image(data['data']['image']),
+      "quote" : h.quote(session.messageId),
       "success" : 0
     };
     log.info("Sent:");
@@ -415,6 +428,7 @@ export async function getMeme(ctx: Context, session: Session):Promise<Object> {
       msg = {
         "time" : time,
         "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+        "quote" : h.quote(session.messageId),
         "success" : 1
       };
       log.info("Sent:");
@@ -424,6 +438,7 @@ export async function getMeme(ctx: Context, session: Session):Promise<Object> {
       msg = {
         "time" : time,
         "data" : data['data'],
+        "quote" : h.quote(session.messageId),
         "success" : 1
       };
       log.info("Sent:");
