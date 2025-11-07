@@ -2,7 +2,7 @@ import { Context, Dict, Schema, Session } from 'koishi';
 import { getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest, getSteam, getMeme } from './commands';
 import { version } from '../package.json';
 
-export const inject = ['database'];
+export const inject = ['database','installer'];
 
 declare module 'koishi' {
   interface Tables {

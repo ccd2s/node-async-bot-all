@@ -144,11 +144,14 @@ export async function readInfoFile(ctx: Context): Promise<string> {
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
     info = await fs.promises.readFile(aPath, 'utf8');
+    const deps = await ctx.installer.getDeps();
     info = info.toString()
       .replace(
         "&version;",
         (await ctx.database.get("botData", "version"))[0].data
-      );
+      )
+      .replace("&kVersion;",<string>deps.koishi.resolved)
+      .replace("&nVersion;",process.versions.node);
   } catch (error) {
     info = error.message;
   }
@@ -241,7 +244,6 @@ export async function getHttp(log:any,url:string,timeout:number): Promise<{ succ
       // 请求失败
       data = await response.text();
       log.error(`Error fetching data: ${data}`);
-      data = JSON.parse(data);
       return {
         "data":JSON.parse(data),
         "error":false,

@@ -29,7 +29,6 @@ commands:
       fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
       error: 执行错误。
-      unknown: 未知错误。
       host: 没有到主机的路由。
   status:
     description: 查询机器人状态。
@@ -112,7 +111,7 @@ commands:
         转换失败：{data}
       null: |-
         参数 Steam 好友码（SteamID 3） 不得为空。
-      error: 执行错误。
+      command: 执行错误。
   meme:
     description: 群友的怪话！
     messages:

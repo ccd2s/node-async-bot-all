@@ -1,15 +1,22 @@
 import { Context, Session, h, sleep } from 'koishi';
 import {
-  fetchWithTimeout,
   formatTimestampDiff,
   getHongKongTime,
   getMsgCount,
   getSystemUsage,
   hostPing,
   readInfoFile,
-  random, getHttp
+  random,
+  getHttp
 } from './fun';
+import { Installer } from "@koishijs/plugin-market";
 import { ConfigCxV2 } from "./index";
+
+declare module 'koishi' {
+  interface Context {
+    installer: Installer;
+  }
+}
 
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
@@ -17,8 +24,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg : object;
-  let dataError : string;
-  let data : string;
+  let data : object;
   let error : string;
   // 获取香港时区当前时间
   const time = getHongKongTime();
@@ -41,68 +47,65 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
     for (const item of api) {
       const note = ctx.config.cxV2[index]['note'][count];
       count++;
-      try {
-        // 发送请求
-        const response = await fetchWithTimeout(item, {}, ctx.config.timeout,log); // 8秒超时
-        // 判断是否成功
-        if (response.ok) {
-          data = await response.text();
-          log.info("Server data: "+data);
-          // 格式化服务器返回的数据
-          data = JSON.parse(data);
-          if (data['list']==null) {
-            // 无玩家
-            const temp = {
-              "count": count,
-              "players": data['players'],
-              "version": data['version'],
-              "note": note ?? '无'
-            };
-            log.info(`Server ${count}:`);
-            log.info(temp);
-            list = list+"\n"+session.text('.listNoPlayer',temp);
-          }
-          else {
-            // 有玩家
-            const temp = {
-              "count": count,
-              "players": data['players'],
-              "version": data['version'],
-              "list": data['list']
-                .join(', '),
-              "note": note ?? '无'
-            };
-            log.info(`Server ${count}:`);
-            log.info(temp);
-            list = list+"\n"+session.text('.list',temp);
-          }
+      // 请求
+      const response = await getHttp(log,item,ctx.config.timeout);
+      if (response.success) {
+        // 成功
+        data = response.data;
+        if (data['list']==null) {
+          // 无玩家
+          const temp = {
+            "count": count,
+            "players": data['players'],
+            "version": data['version'],
+            "note": note ?? '无'
+          };
+          log.info(`Server ${count}:`);
+          log.info(temp);
+          list = list+"\n"+session.text('.listNoPlayer',temp);
+        }
+        else {
+          // 有玩家
+          const temp = {
+            "count": count,
+            "players": data['players'],
+            "version": data['version'],
+            "list": data['list']
+              .join(', '),
+            "note": note ?? '无'
+          };
+          log.info(`Server ${count}:`);
+          log.info(temp);
+          list = list+"\n"+session.text('.list',temp);
+        }
+      } else {
+        // 失败
+        if (response.error){
+          // json 格式化失败
+          data = response.data;
+          // 发送消息
+          const temp = {
+            "count": count,
+            "data": (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+          };
+          log.info(`Server ${count}:`);
+          log.info(temp);
+          list = list+"\n"+session.text('.listFailed',temp);
         } else {
-          // 请求错误
-          dataError = await response.text();
-          try {
-            const vError = JSON.parse(dataError);
-            error = vError['data'];
-            // 服务器关闭
-            if (error.includes("Connection refused")) {
-              error = session.text('.close');
-            } else if (error.includes("No route to host")) {
-              error = session.text('.host');
-            } else if (error.includes("Connection timed out")) {
-              error = session.text('.timeout');
-            } else if (error.includes("Server returned too few data")) {
-              error = session.text('.fewData');
-            } else if (error.includes("Server read timed out")) {
-              error = session.text('.timeout2');
-            }
-          } catch (e) {
-            // CDN超时或未知
-            if(dataError.includes("CDN节点请求源服务器超时")){
-              error = session.text('.timeout');
-            } else {
-              error = session.text('.unknown');
-            }
+          data = response.data;
+          error = data['data'];
+          // 服务器关闭
+          if (error.includes("Connection refused")) {
+            error = session.text('.close');
+          } else if (error.includes("No route to host")) {
+            error = session.text('.host');
+          } else if (error.includes("Connection timed out")) {
+            error = session.text('.timeout');
+          } else if (error.includes("Server returned too few data")) {
+            error = session.text('.fewData');
+          } else if (error.includes("Server read timed out")) {
+            error = session.text('.timeout2');
           }
-          log.error(`Error fetching data: ${dataError}`);
           // 发送消息
           const temp = {
             "count": count,
@@ -112,17 +115,6 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           log.info(temp);
           list = list+"\n"+session.text('.listFailed',temp);
         }
-      } catch (err) {
-        // 报错
-        log.error(`Request error: ${err.message}`);
-        // 发送消息
-        const temp = {
-          "count": count,
-          "data": (err.name === 'AbortError') ? session.text('.error') : err.message
-        };
-        log.info(`Server ${count}:`);
-        log.info(temp);
-        list = list+"\n"+session.text('.listFailed',temp);
       }
     }
     msg = {
@@ -246,6 +238,17 @@ export async function getRW(ctx: Context, session: Session):Promise<Object> {
   let data : object;
   // 获取香港时区当前时间
   const time = getHongKongTime();
+  if (ctx.config.rwAPI==undefined){
+    // 未指定 API
+    msg = {
+      "time": time,
+      "data": "未指定 API",
+      "success": 2
+    };
+    log.info("Sent:");
+    log.info(msg);
+    return msg;
+  }
   // 发送请求
   const response = await getHttp(log,ctx.config.rwAPI+"?format=json",ctx.config.timeout);
   if (response.success) {
@@ -289,6 +292,11 @@ export async function getBA(ctx: Context, session: Session):Promise<Number> {
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = getHongKongTime();
+  if (ctx.config.rwAPI==undefined){
+    // 未指定 API
+    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : "未指定 API"}));
+    return 1;
+  }
   // 发送等待消息
   const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   const ms = random(0,0, 1500);
@@ -368,7 +376,7 @@ export async function getSteam(ctx: Context, session: Session, id:number):Promis
       data = response.data;
       msg = {
         "time" : time,
-        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
+        "data" : (data['name'] === 'AbortError') ? session.text('.command') : data['message'],
         "success" : 2
       };
       log.info("Sent:");
