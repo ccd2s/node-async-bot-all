@@ -396,7 +396,7 @@ export async function getSteam(ctx: Context, session: Session, id:number):Promis
 }
 
 // 指令 Meme
-export async function getMeme(ctx: Context, session: Session):Promise<Object> {
+export async function getMeme(ctx: Context, session: Session, count: number):Promise<Object> {
   const log = ctx.logger('getMeme');
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -417,7 +417,7 @@ export async function getMeme(ctx: Context, session: Session):Promise<Object> {
     return msg;
   }
   // 发送请求
-  const response = await getHttp(log,api,ctx.config.timeout);
+  const response = (count) ? await getHttp(log,api+`&type=1&count=${count}`,ctx.config.timeout) : await getHttp(log,api,ctx.config.timeout);
   if (response.success) {
     data = response.data;
     // 发送消息

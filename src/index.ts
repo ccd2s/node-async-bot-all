@@ -163,10 +163,10 @@ export function apply(ctx: Context) {
         return session?.text('.failed',steam);
       }
     });
-  ctx.command('meme')
+  ctx.command('meme [序号:posint]')
     .alias('memes')
-    .action(async ({ session }) => {
-      const meme = await getMeme(ctx, <Session>session);
+    .action(async ({ session },count) => {
+      const meme = await getMeme(ctx, <Session>session, count);
       if (meme['success']==0){
         return session?.text('.msg',meme);
       } else if (meme['success']==1){
