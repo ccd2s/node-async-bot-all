@@ -4,5 +4,7 @@
 --- 开发者 ---
 德二吹风机（3112836258）
 --- 其他 ---
+Node.js 版本：&nVersion;
+Koishi 版本：&kVersion;
 开源地址：https://github.com/ccd2s/node-async-bot-all
 官网：https://www.tasaed.top
