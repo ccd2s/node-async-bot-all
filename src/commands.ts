@@ -396,7 +396,7 @@ export async function getSteam(ctx: Context, session: Session, id:number):Promis
 }
 
 // 指令 Meme
-export async function getMeme(ctx: Context, session: Session, count: number):Promise<Object> {
+export async function getMeme(ctx: Context, session: Session, count: number):Promise<Number> {
   const log = ctx.logger('getMeme');
   log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -410,11 +410,12 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
     msg = {
       "time" : time,
       "quote" : h.quote(session.messageId),
-      "success" : 2
+      "success" : '.forbidden'
     };
     log.info("Sent:");
     log.info(msg);
-    return msg;
+    await session.send(session.text(msg["success"], msg));
+    return 0;
   }
   // 发送请求
   const response = (count) ? await getHttp(log,api+`&type=1&count=${count}`,ctx.config.timeout) : await getHttp(log,api,ctx.config.timeout);
@@ -426,7 +427,7 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
       "title" : data['data']['title'],
       "image" : h.image(data['data']['image']),
       "quote" : h.quote(session.messageId),
-      "success" : 0
+      "success" : '.msg'
     };
     log.info("Sent:");
     log.info(msg);
@@ -437,7 +438,7 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
         "time" : time,
         "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
         "quote" : h.quote(session.messageId),
-        "success" : 1
+        "success" : '.failed'
       };
       log.info("Sent:");
       log.info(msg);
@@ -447,11 +448,12 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
         "time" : time,
         "data" : data['data'],
         "quote" : h.quote(session.messageId),
-        "success" : 1
+        "success" : '.failed'
       };
       log.info("Sent:");
       log.info(msg);
     }
   }
-  return msg;
+  await session.send(session.text(msg["success"], msg));
+  return 0;
 }

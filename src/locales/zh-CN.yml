@@ -126,3 +126,4 @@ commands:
         {quote}{time}
         此指令不允许在本群使用。
       error: 执行错误。
+      e: 未能发送消息。

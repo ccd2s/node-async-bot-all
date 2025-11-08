@@ -166,14 +166,10 @@ export function apply(ctx: Context) {
   ctx.command('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
-      const meme = await getMeme(ctx, <Session>session, count);
-      if (meme['success']==0){
-        return session?.text('.msg',meme);
-      } else if (meme['success']==1){
-        return session?.text('.failed',meme);
-      }
-      else{
-        return session?.text('.forbidden',meme);
+      try{
+        await getMeme(ctx, <Session>session, count);
+      } catch (e) {
+        await session?.send(session?.text(".e"));
       }
     });
 }
