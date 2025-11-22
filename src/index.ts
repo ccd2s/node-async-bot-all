@@ -1,5 +1,5 @@
 import { Context, Dict, Schema, Session } from 'koishi';
-import { getServer, getStatus, getRandom, getInfo, getRW, getBA, serverTest, getSteam, getMeme } from './commands';
+import * as command from './commands';
 import { version } from '../package.json';
 
 export const inject = ['database','installer'];
@@ -31,7 +31,8 @@ export interface Config {
   baAPI:string[],
   serverPing:Dict<string>,
   steamAPI:string,
-  memesAPI:Dict<string>;
+  memesAPI:Dict<string>,
+  catAPI:string;
 }
 
 export const Config: Schema<Config> =
@@ -63,6 +64,9 @@ export const Config: Schema<Config> =
     Schema.object({
       memesAPI: Schema.dict(String).role('table').description('群友 meme API')
     }).description('群友 meme'),
+    Schema.object({
+      catAPI: Schema.string().default('https://api.thecatapi.com/v1/images/search').description('随机猫猫图 API')
+    }).description('随机猫猫图'),
   ]).description('基础设置');
 
 // 插件注册
@@ -85,7 +89,7 @@ export function apply(ctx: Context) {
   // 指令注册
   ctx.command('cxGame')
     .action(async ({ session }) => {
-      const cx = await getServer(ctx, <Session>session);
+      const cx = await command.getServer(ctx, <Session>session);
       if (cx['success']==0) {
         return session?.text('.msg',cx);
       } else if (cx['success']==1) {
@@ -95,8 +99,10 @@ export function apply(ctx: Context) {
       }
     });
   ctx.command('status')
+    .alias('stats')
+    .alias('状态')
     .action(async ({ session }) => {
-      const status = await getStatus(ctx, <Session>session);
+      const status = await command.getStatus(ctx, <Session>session);
       if (status['success']==0) {
         return session?.text('.msg',status);
       } else {
@@ -106,12 +112,12 @@ export function apply(ctx: Context) {
   ctx.command('random [最小数:number] [最大数:number]')
     .alias('随机数')
     .action(async ({ session },min,max) => {
-      const random = await getRandom(ctx,<Session>session,min,max);
+      const random = await command.getRandom(ctx,<Session>session,min,max);
       return session?.text('.msg',random);
     });
   ctx.command('info')
     .action(async ({ session }) => {
-      const info = await getInfo(ctx,<Session>session);
+      const info = await command.getInfo(ctx,<Session>session);
       if (info['success']==0){
         return session?.text('.msg',info);
       }
@@ -121,7 +127,7 @@ export function apply(ctx: Context) {
     });
   ctx.command('rw')
     .action(async ({ session }) => {
-      const rw = await getRW(ctx,<Session>session);
+      const rw = await command.getRW(ctx,<Session>session);
       if (rw['success']==0){
         return session?.text('.msg',rw);
       }
@@ -135,12 +141,12 @@ export function apply(ctx: Context) {
   ctx.command('randomBA')
     .alias('随机ba图')
     .action(async ({ session }) => {
-      await getBA(ctx, <Session>session);
+      await command.getBA(ctx, <Session>session);
     });
   ctx.command('serverTest')
     .alias('服之测测')
     .action(async ({ session }) => {
-      const server = await serverTest(ctx, <Session>session);
+      const server = await command.serverTest(ctx, <Session>session);
       if (server['success']==0) {
         return session?.text('.msg',server);
       } else if (server['success']==1) {
@@ -155,7 +161,7 @@ export function apply(ctx: Context) {
       if (id==null){
         return session?.text('.null');
       }
-      const steam = await getSteam(ctx, <Session>session, id);
+      const steam = await command.getSteam(ctx, <Session>session, id);
       if (steam['success']==0){
         return session?.text('.msg',steam);
       }
@@ -166,10 +172,12 @@ export function apply(ctx: Context) {
   ctx.command('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
-      try{
-        await getMeme(ctx, <Session>session, count);
-      } catch (e) {
-        await session?.send(session?.text(".e"));
-      }
+      await command.getMeme(ctx, <Session>session, count);
+    });
+  ctx.command('randomCat')
+    .alias('随机猫猫图')
+    .alias('随机猫猫')
+    .action(async ({ session }) => {
+      await command.getCat(ctx, <Session>session);
     });
 }

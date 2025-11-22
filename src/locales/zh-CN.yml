@@ -126,4 +126,15 @@ commands:
         {quote}{time}
         此指令不允许在本群使用。
       error: 执行错误。
-      e: 未能发送消息。
+  randomcat:
+    description: 随机猫猫图。
+    messages:
+      msg: |-
+        {quote}{image}
+      error: 执行错误。
+      wait: |-
+        {quote}{time}
+        请等待图片上传（可能较慢）。
+      failed: |-
+        {quote}{time}
+        获取失败：{data}
