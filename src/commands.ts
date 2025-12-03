@@ -2,17 +2,58 @@ import { Context, Session, h, sleep } from 'koishi';
 import * as fun from './fun';
 import { Installer } from "@koishijs/plugin-market";
 import { ConfigCxV2 } from "./index";
+import Puppeteer from 'koishi-plugin-puppeteer';
 
 declare module 'koishi' {
   interface Context {
     installer: Installer;
+    puppeteer: Puppeteer;
   }
+}
+
+interface APICat {
+  [index: number]: {
+    id: string;
+    url: string;
+    width: number;
+    height: number;
+  };
+}
+
+interface APIMeme {
+  data: {
+    title: string;
+    image: string;
+  };
+  success: boolean;
+}
+
+/*interface APIRandomWord {
+  data: string;
+  success: boolean;
+}*/
+
+export interface APIUserInfo {
+  qq: string;
+  nickname: string;
+  long_nick: string;
+  avatar_url: string;
+  age: number;
+  sex: string;
+  qid: string;
+  qq_level: number;
+  location: string;
+  email: string;
+  is_vip: boolean;
+  vip_level: number;
+  reg_time: string;
+  last_updated: string;
 }
 
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('cx');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg : object;
   let data : object;
@@ -129,7 +170,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
 // 指令 Status
 export async function getStatus(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('status');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -167,7 +208,7 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
 // 指令 Random
 export async function getRandom(ctx: Context, session: Session, min: number, max: number):Promise<Object> {
   const log = ctx.logger('random');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -194,7 +235,7 @@ export async function getRandom(ctx: Context, session: Session, min: number, max
 // 指令 Info
 export async function getInfo(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('info');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -221,9 +262,9 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
 }
 
 // 指令 RW
-export async function getRW(ctx: Context, session: Session):Promise<Object> {
+export async function getRandomWord(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('rw');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
   let data : object;
@@ -277,10 +318,10 @@ export async function getRW(ctx: Context, session: Session):Promise<Object> {
 }
 
 // 指令 BA
-export async function getBA(ctx: Context, session: Session):Promise<Number> {
+export async function getBlueArchive(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('ba');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.baAPI==undefined){
@@ -305,7 +346,7 @@ export async function getBA(ctx: Context, session: Session):Promise<Number> {
 export async function serverTest(ctx: Context, session: Session):Promise<Object> {
   // 日志
   const log = ctx.logger('serverTest');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   const host = ctx.config.serverPing[`${session.event.guild?.id}`];
@@ -341,109 +382,56 @@ export async function serverTest(ctx: Context, session: Session):Promise<Object>
   };
 }
 
-// 指令 SteamId
-export async function getSteam(ctx: Context, session: Session, id:number):Promise<Object> {
-  const log = ctx.logger('steamId');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  // 设立必要变量
-  let msg: object;
-  let data : object;
-  // 获取香港时区当前时间
-  const time = fun.getHongKongTime();
-  // 发送请求
-  const response = await fun.getHttp(log,ctx.config.steamAPI+`?format=json&id=${id}`,ctx.config.timeout);
-  if (response.success) {
-    data = response.data;
-    // 发送消息
-    msg = {
-      "time" : time,
-      "data" : data['data'],
-      "success" : 0
-    };
-    log.info("Sent:");
-    log.info(msg);
-  } else {
-    if (response.error){
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : (data['name'] === 'AbortError') ? session.text('.command') : data['message'],
-        "success" : 2
-      };
-      log.info("Sent:");
-      log.info(msg);
-    } else {
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : data['data'],
-        "success" : 1
-      };
-      log.info("Sent:");
-      log.info(msg);
-    }
-  }
-  return msg;
-}
-
 // 指令 Meme
 export async function getMeme(ctx: Context, session: Session, count: number):Promise<Number> {
   const log = ctx.logger('getMeme');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
-  let data : object;
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
-  const api = ctx.config.memesAPI[`${session.event.guild?.id}`]
-  if(api==undefined){
+  if(ctx.config.memesAPI[`${session.event.guild?.id}`]==undefined){
     // 发送消息
     msg = {
       "time" : time,
       "quote" : h.quote(session.messageId),
       "success" : '.forbidden'
     };
-    log.info("Sent:");
-    log.info(msg);
+    log.warn("Sent:");
+    log.warn(msg);
     await session.send(session.text(msg["success"], msg));
     return 0;
   }
+  const api = (count) ? ctx.config.memesAPI[`${session.event.guild?.id}`] + `&type=1&count=${count}` : ctx.config.memesAPI[`${session.event.guild?.id}`];
   // 发送请求
-  const response = (count) ? await fun.getHttp(log,api+`&type=1&count=${count}`,ctx.config.timeout) : await fun.getHttp(log,api,ctx.config.timeout);
+  const response = await fun.request<APIMeme>(api, {}, ctx.config.timeout, log);
   if (response.success) {
-    data = response.data;
     // 发送消息
     msg = {
       "time" : time,
-      "title" : data['data']['title'],
-      "image" : h.image(data['data']['image']),
+      "title" : response.data.data.title,
+      "image" : h.image(response.data.data.image),
       "quote" : h.quote(session.messageId),
       "success" : '.msg'
     };
-    log.info("Sent:");
-    log.info(msg);
+    log.debug("Sent:");
+    log.debug(msg);
   } else {
-    if (response.error){
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
-        "quote" : h.quote(session.messageId),
-        "success" : '.failed'
-      };
-      log.info("Sent:");
-      log.info(msg);
-    } else {
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : data['data'],
-        "quote" : h.quote(session.messageId),
-        "success" : '.failed'
-      };
-      log.info("Sent:");
-      log.info(msg);
+    let err: string;
+    if (response.code) {
+      err = (response.isJson) ? response.error['data'] : response.error;
     }
+    else {
+      err = response.error.message;
+    }
+    msg = {
+      "time" : time,
+      "data" : err,
+      "quote" : h.quote(session.messageId),
+      "success" : '.failed'
+    };
+    log.warn("Sent:");
+    log.warn(msg);
   }
   await session.send(session.text(msg["success"], msg));
   return 0;
@@ -453,7 +441,7 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
 export async function getCat(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('cat');
-  log.info(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.catAPI==undefined){
@@ -464,30 +452,66 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   // 发送等待消息
   const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   // 发送请求
-  const response = await fun.getHttp(log,ctx.config.catAPI,ctx.config.timeout);
+  const response = await fun.request<APICat>(ctx.config.catAPI, {}, ctx.config.timeout, log);
   if (response.success) {
-    const data = response.data;
-    log.info(data[0]['url']);
+    log.debug(response.data);
     // 发送消息
-    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(data[0]['url'])}));
-    log.info("Sent:");
-    log.info(data[0]['url']);
+    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
+    log.debug("Sent:");
+    log.debug(response.data[0].url);
   } else {
-    if (response.error){
-      const data = response.data;
-      // 发送消息
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'], "time": time}));
-      log.info("Sent:");
-      log.info(data['message']);
-    } else {
-      const data = response.data;
-      // 发送消息
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : data['data'], "time": time}));
-      log.info("Sent:");
-      log.info(data['data']);
+    if (response.code){
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), 'data' : (response.isJson) ? response.error['error'] : response.error, "time": time}));
+      log.warn("Sent:");
+      log.warn(response.error);
+    }
+    else {
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), 'data' : response.error.message, "time": time}));
+      log.warn("Sent:");
+      log.warn(response.error);
     }
   }
   // 撤回消息
   await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
+  return 0;
+}
+
+export async function getQQInfo(ctx: Context, session: Session, qq: string):Promise<number> {
+  const log = ctx.logger('getQQInfo');
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  // 获取香港时区当前时间
+  const time = fun.getHongKongTime();
+  if (ctx.config.qqAPI==undefined){
+    // 未指定 API
+    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : "未指定 API", "time": time}));
+    return 1;
+  }
+  // 发送请求
+  const response = await fun.request<APIUserInfo>(ctx.config.qqAPI+`?qq=${qq}`, {}, ctx.config.timeout, log);
+  if (response.success) {
+    log.info(response.data);
+    const fullHtml = await fun.readUserCardFile(response.data);
+    const page = await ctx.puppeteer.page();
+    await page.setViewport({
+      width: 450,
+      height: 650,
+      deviceScaleFactor: 2
+    });
+    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+    const image = await page.screenshot({ type: 'png', omitBackground: true });
+    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+    log.debug("Sent: Image");
+  } else {
+    if (response.code){
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : (response.isJson) ? response.error['error'] : response.error, "time": time}));
+      log.warn("Sent:");
+      log.warn(response.error);
+    }
+    else {
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : response.error.message, "time": time}));
+      log.warn("Sent:");
+      log.warn(response.error);
+    }
+  }
   return 0;
 }

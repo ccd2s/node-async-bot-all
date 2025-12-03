@@ -2,8 +2,10 @@ import os from 'os';
 import fs from 'fs';
 import ping from 'ping';
 import path from 'path';
+import { HttpResponse } from "./index";
 import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
+import {APIUserInfo} from "./commands";
 
 // 获取系统名称
 function getSystemName(): string {
@@ -259,4 +261,107 @@ export async function getHttp(log:any,url:string,timeout:number): Promise<{ succ
       "success":false
     };
   }
+}
+
+/**
+ * HTTP 请求
+ * @param url 请求地址
+ * @param options fetch 选项 (method, headers, body 等)
+ * @param timeout 超时时间 (默认 8000ms)
+ * @param log 日志
+ */
+export async function request<T = any>(
+  url: string,
+  options: RequestInit = {},
+  timeout: number = 8000,
+  log?: any
+): Promise<HttpResponse<T>> {
+
+  // 原生超时信号
+  const signal = AbortSignal.timeout(timeout);
+
+  try {
+    const response = await fetch(url, { ...options, signal });
+
+    // 尝试解析 JSON，如果解析失败则保留文本
+    let responseData: any;
+    let isJson: boolean;
+    const text = await response.text();
+    try {
+      responseData = JSON.parse(text);
+      isJson = true;
+    } catch {
+      responseData = text; // 如果不是 JSON，就返回纯文本
+      isJson = false;
+    }
+
+    // 处理 HTTP 错误状态 (如 404, 500)
+    if (!response.ok) {
+      log?.error(`HTTP Error ${response.status}: ${url}`, responseData);
+      return {
+        success: false,
+        code: response.status,
+        error: responseData || `HTTP ${response.status}`,
+        isJson: isJson
+      };
+    }
+
+    log?.info(`HTTP ${response.status}: ${url}`);
+    // 请求成功
+    return {
+      success: true,
+      data: responseData as T
+    };
+
+  } catch (error: any) {
+    // 处理网络错误或超时
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+    const errorMessage = isTimeout ? `请求超时。(${timeout}ms)` : error.message;
+
+    log?.error(`Request Failed: ${errorMessage}`);
+
+    return {
+      success: false,
+      error: { name: error.name, message: errorMessage },
+      isJson: false
+    };
+  }
+}
+
+// 读取信息文件
+export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
+  let card: string;
+  try{
+    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userCard.html";
+    card = await fs.promises.readFile(aPath, 'utf8');
+    let sex_so: string;
+    let sex: string;
+    if (userInfo.sex == "male"){
+      sex = "♂";
+      sex_so = "sex-male";
+    } else if (userInfo.sex == "female"){
+      sex = "♀";
+      sex_so = "sex-female";
+    } else {
+      sex = "猫娘";
+      sex_so = "sex-unknown";
+    }
+    card = card.toString()
+      .replace("{avatarUrl}", userInfo.avatar_url)
+      .replace("{nickname}", userInfo.nickname)
+      .replace("{sex}", sex)
+      .replace("{sex-so}", sex_so)
+      .replace("{age}", String(userInfo.age))
+      .replace("{longNick}", (userInfo.long_nick=="") ? "<无>" : `“ ${userInfo.long_nick} ”`)
+      .replace("{qq}", userInfo.qq)
+      .replace("{qqLevel}", String(userInfo.qq_level))
+      .replace("{qid}", (userInfo.qid=="") ? "<无>" : userInfo.qid)
+      .replace("{location}", (userInfo.location=="") ? "<无>" : userInfo.location)
+      .replace("{email}", (userInfo.email=="") ? "<无>" : userInfo.email)
+      .replace("{regTime}", userInfo.reg_time)
+      .replace("{lastUpdated}", userInfo.last_updated);
+  } catch (error) {
+    card = error.message;
+  }
+  return card;
 }

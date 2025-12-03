@@ -100,18 +100,6 @@ commands:
       failed: |-
         {time}
         Ping 失败：{data}
-  steamid:
-    description: 将 Steam 好友码（SteamID 3）转为 SteamID 64。
-    messages:
-      msg: |-
-        {time}
-        转换结果：{data}
-      failed: |-
-        {time}
-        转换失败：{data}
-      null: |-
-        参数 Steam 好友码（SteamID 3） 不得为空。
-      command: 执行错误。
   meme:
     description: 群友的怪话！
     messages:
@@ -131,10 +119,18 @@ commands:
     messages:
       msg: |-
         {quote}{image}
-      error: 执行错误。
       wait: |-
         {quote}{time}
         请等待图片上传（可能较慢）。
       failed: |-
         {quote}{time}
         获取失败：{data}
+  getqqinfo:
+    description: 获取 QQ 号的信息。
+    messages:
+      msg: |-
+        {quote}{image}
+      failed: |-
+        {quote}{time}
+        获取失败：{data}
+      command: QQ 号不得为空。

@@ -2,7 +2,11 @@ import { Context, Dict, Schema, Session } from 'koishi';
 import * as command from './commands';
 import { version } from '../package.json';
 
-export const inject = ['database','installer'];
+export const inject = ['database', 'installer', 'puppeteer'];
+
+export type HttpResponse<T> =
+  | { success: true; data: T; }
+  | { success: false; error: any; code?: number; isJson: boolean };
 
 declare module 'koishi' {
   interface Tables {
@@ -32,7 +36,8 @@ export interface Config {
   serverPing:Dict<string>,
   steamAPI:string,
   memesAPI:Dict<string>,
-  catAPI:string;
+  catAPI:string,
+  qqAPI:string;
 }
 
 export const Config: Schema<Config> =
@@ -67,6 +72,9 @@ export const Config: Schema<Config> =
     Schema.object({
       catAPI: Schema.string().default('https://api.thecatapi.com/v1/images/search').description('随机猫猫图 API')
     }).description('随机猫猫图'),
+    Schema.object({
+      qqAPI: Schema.string().default('https://uapis.cn/api/v1/social/qq/userinfo').description('获取 QQ 信息 API')
+    }).description('获取 QQ 信息'),
   ]).description('基础设置');
 
 // 插件注册
@@ -127,7 +135,7 @@ export function apply(ctx: Context) {
     });
   ctx.command('rw')
     .action(async ({ session }) => {
-      const rw = await command.getRW(ctx,<Session>session);
+      const rw = await command.getRandomWord(ctx,<Session>session);
       if (rw['success']==0){
         return session?.text('.msg',rw);
       }
@@ -141,7 +149,7 @@ export function apply(ctx: Context) {
   ctx.command('randomBA')
     .alias('随机ba图')
     .action(async ({ session }) => {
-      await command.getBA(ctx, <Session>session);
+      await command.getBlueArchive(ctx, <Session>session);
     });
   ctx.command('serverTest')
     .alias('服之测测')
@@ -155,20 +163,6 @@ export function apply(ctx: Context) {
         return session?.text('.failed',server);
       }
     });
-  ctx.command('steamId <Steam 好友码（SteamID 3）:posint>')
-    .alias('steam')
-    .action(async ({ session },id) => {
-      if (id==null){
-        return session?.text('.null');
-      }
-      const steam = await command.getSteam(ctx, <Session>session, id);
-      if (steam['success']==0){
-        return session?.text('.msg',steam);
-      }
-      else{
-        return session?.text('.failed',steam);
-      }
-    });
   ctx.command('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
@@ -179,5 +173,11 @@ export function apply(ctx: Context) {
     .alias('随机猫猫')
     .action(async ({ session }) => {
       await command.getCat(ctx, <Session>session);
+    });
+  ctx.command('getQQInfo <QQ号:string>')
+    .alias('获取QQ信息')
+    .action(async ({ session }, qq) => {
+      if (qq==undefined) return session?.text('.command') ;
+      await command.getQQInfo(ctx, <Session>session, qq);
     });
 }

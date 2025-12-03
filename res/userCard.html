@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile Card</title>
+  <style>
+    /* 全局重置 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* 顶部对齐 */
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* 卡片容器 */
+    .card {
+      width: 400px; /* 固定宽度，配合 puppeteer 视口 */
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 顶部背景图/颜色 */
+    .card-header-bg {
+      height: 120px;
+      background: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
+    }
+
+    /* 个人信息主要区域 */
+    .profile-main {
+      padding: 0 24px;
+      margin-top: -50px; /* 让头像上浮 */
+      text-align: center;
+    }
+
+    /* 头像容器 */
+    .avatar-container {
+      position: relative;
+      display: inline-block;
+      padding: 4px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* VIP 徽章 */
+    .vip-badge {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: #FFD700;
+      color: #d63031;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 2px solid #fff;
+    }
+
+    .nickname-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .nickname {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    /* 性别图标 */
+    .sex-icon {
+      font-size: 14px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: white;
+    }
+
+    .sex-male {
+      background-color: #007bff;
+    }
+
+    .sex-female {
+      background-color: #ff6b81;
+    }
+
+    .sex-unknown {
+      background-color: #ff6be1;
+    }
+
+    .long-nick {
+      margin-top: 8px;
+      color: #666;
+      font-size: 14px;
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+
+    /* 详细信息列表 */
+    .info-list {
+      padding: 0 24px 24px 24px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      color: #888;
+      font-weight: 500;
+    }
+
+    .value {
+      color: #333;
+      font-weight: 600;
+      text-align: right;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 标签样式 (如 VIP 等级) */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+
+    .tag-vip {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .tag-level {
+      background-color: #e2e3e5;
+      color: #383d41;
+    }
+
+    /* 底部时间戳 */
+    .footer {
+      background-color: #f8f9fa;
+      padding: 12px 24px;
+      font-size: 12px;
+      color: #adb5bd;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="card" id="card-element">
+  <!-- 顶部背景 -->
+  <div class="card-header-bg"></div>
+
+  <!-- 主要信息 -->
+  <div class="profile-main">
+    <div class="avatar-container">
+      <img src="{avatarUrl}" alt="Avatar" class="avatar">
+    </div>
+
+    <div class="nickname-row">
+      <span class="nickname">{nickname}</span>
+      <!-- 性别: 男 -->
+      <span class="sex-icon {sex-so}">{sex} | {age} 岁</span>
+    </div>
+
+    <div class="long-nick">{longNick}</div>
+  </div>
+
+  <!-- 详细数据列表 -->
+  <div class="info-list">
+    <div class="info-item">
+      <span class="label">QQ账号</span>
+      <span class="value">{qq}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">QQ等级</span>
+      <span class="value">
+        <span class="tag tag-level">LV {qqLevel}</span>
+      </span>
+    </div>
+    <div class="info-item">
+      <span class="label">个性域名 (QID)</span>
+      <span class="value">{qid}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">所在地</span>
+      <span class="value">{location}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">电子邮箱</span>
+      <span class="value">{email}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">注册时间</span>
+      <span class="value">{regTime}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    数据更新于: {lastUpdated}
+  </div>
+</div>
+
+</body>
+</html>
