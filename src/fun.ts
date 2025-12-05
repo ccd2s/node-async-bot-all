@@ -318,6 +318,7 @@ export async function request<T = any>(
     const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
     const errorMessage = isTimeout ? `请求超时。(${timeout}ms)` : error.message;
 
+    log?.error(url);
     log?.error(`Request Failed: ${errorMessage}`);
 
     return {

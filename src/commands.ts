@@ -336,7 +336,8 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   log.info(`Link: ${link}`);
   // 等待防止阈值限制
   await sleep(ms);
-  await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
+  const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
+  if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
   // 撤回消息
   await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
   return 0;
@@ -433,11 +434,12 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
     log.warn("Sent:");
     log.warn(msg);
   }
-  await session.send(session.text(msg["success"], msg));
+  const status = await session.send(session.text(msg["success"], msg));
+  if (!status) await session.send(session.text(msg["success"], msg));
   return 0;
 }
 
-// 指令 BA
+// 指令 Cat
 export async function getCat(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('cat');
@@ -476,6 +478,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   return 0;
 }
 
+// 指令 获取 qq 信息
 export async function getQQInfo(ctx: Context, session: Session, qq: string):Promise<number> {
   const log = ctx.logger('getQQInfo');
   log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
@@ -499,7 +502,8 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
     });
     await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
     const image = await page.screenshot({ type: 'png', omitBackground: true });
-    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+    const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+    if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
     log.debug("Sent: Image");
   } else {
     if (response.code){

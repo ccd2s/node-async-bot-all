@@ -133,4 +133,4 @@ commands:
       failed: |-
         {quote}{time}
         获取失败：{data}
-      command: QQ 号不得为空。
+      command: QQ 号不正确。

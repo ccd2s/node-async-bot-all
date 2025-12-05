@@ -177,7 +177,7 @@ export function apply(ctx: Context) {
   ctx.command('getQQInfo <QQ号:string>')
     .alias('获取QQ信息')
     .action(async ({ session }, qq) => {
-      if (qq==undefined) return session?.text('.command') ;
+      if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
       await command.getQQInfo(ctx, <Session>session, qq);
     });
 }
