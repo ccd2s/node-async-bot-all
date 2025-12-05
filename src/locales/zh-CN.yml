@@ -71,10 +71,7 @@ commands:
         {time}
         {data}
       error: 执行错误。
-      failed1: |-
-        {time}
-        获取失败（1）。
-      failed2: |-
+      failed: |-
         {time}
         获取失败（{data}）。
   randomba:

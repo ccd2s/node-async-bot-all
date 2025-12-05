@@ -139,11 +139,8 @@ export function apply(ctx: Context) {
       if (rw['success']==0){
         return session?.text('.msg',rw);
       }
-      else if (rw['success']==1){
-        return session?.text('.failed1',rw);
-      }
       else{
-        return session?.text('.failed2',rw);
+        return session?.text('.failed',rw);
       }
     });
   ctx.command('randomBA')

@@ -28,10 +28,19 @@ interface APIMeme {
   success: boolean;
 }
 
-/*interface APIRandomWord {
+interface APIRandomWord {
   data: string;
   success: boolean;
-}*/
+}
+
+interface APIServer {
+  players: string;
+  text: string;
+  version: string;
+  protocol: string;
+  list: string[] | null;
+  success: boolean;
+}
 
 export interface APIUserInfo {
   qq: string;
@@ -56,8 +65,6 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
   log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg : object;
-  let data : object;
-  let error : string;
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   const index = ctx.config.cxV2.findIndex((item:ConfigCxV2) => item.id === session.event.guild?.id);
@@ -70,8 +77,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         "data": "未指定查询 API",
         "success": 2
       };
-      log.info("Sent:");
-      log.info(msg);
+      log.warn("Sent:");
+      log.warn(msg);
       return msg;
     }
     let count = 0;
@@ -80,16 +87,15 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
       const note = ctx.config.cxV2[index]['note'][count];
       count++;
       // 请求
-      const response = await fun.getHttp(log,item,ctx.config.timeout);
+      const response = await fun.request<APIServer>(item, {}, ctx.config.timeout, log);
       if (response.success) {
         // 成功
-        data = response.data;
-        if (data['list']==null) {
+        if (response.data.list==null) {
           // 无玩家
           const temp = {
             "count": count,
-            "players": data['players'],
-            "version": data['version'],
+            "players": response.data.players,
+            "version": response.data.version,
             "note": note ?? '无'
           };
           log.info(`Server ${count}:`);
@@ -100,9 +106,9 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           // 有玩家
           const temp = {
             "count": count,
-            "players": data['players'],
-            "version": data['version'],
-            "list": data['list']
+            "players": response.data.players,
+            "version": response.data.version,
+            "list": response.data.list
               .join(', '),
             "note": note ?? '无'
           };
@@ -112,41 +118,32 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         }
       } else {
         // 失败
-        if (response.error){
-          // json 格式化失败
-          data = response.data;
-          // 发送消息
-          const temp = {
-            "count": count,
-            "data": (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
-          };
-          log.info(`Server ${count}:`);
-          log.info(temp);
-          list = list+"\n"+session.text('.listFailed',temp);
-        } else {
-          data = response.data;
-          error = data['data'];
+        let err: string;
+        if (response.code) {
+          err = (response.isJson) ? response.error['data'] : response.error;
           // 服务器关闭
-          if (error.includes("Connection refused")) {
-            error = session.text('.close');
-          } else if (error.includes("No route to host")) {
-            error = session.text('.host');
-          } else if (error.includes("Connection timed out")) {
-            error = session.text('.timeout');
-          } else if (error.includes("Server returned too few data")) {
-            error = session.text('.fewData');
-          } else if (error.includes("Server read timed out")) {
-            error = session.text('.timeout2');
+          if (err.includes("Connection refused")) {
+            err = session.text('.close');
+          } else if (err.includes("No route to host")) {
+            err = session.text('.host');
+          } else if (err.includes("Connection timed out")) {
+            err = session.text('.timeout');
+          } else if (err.includes("Server returned too few data")) {
+            err = session.text('.fewData');
+          } else if (err.includes("Server read timed out")) {
+            err = session.text('.timeout2');
           }
-          // 发送消息
-          const temp = {
-            "count": count,
-            "data": error
-          };
-          log.info(`Server ${count}:`);
-          log.info(temp);
-          list = list+"\n"+session.text('.listFailed',temp);
         }
+        else {
+          err = response.error.message;
+        }
+        const temp = {
+          "count": count,
+          "data": err,
+        };
+        log.error(`Server ${count}:`);
+        log.error(temp);
+        list = list+"\n"+session.text('.listFailed',temp);
       }
     }
     msg = {
@@ -200,8 +197,8 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
       "success" : 0
     };
   }
-  log.info("Sent:");
-  log.info(msg);
+  log.debug("Sent:");
+  log.debug(msg);
   return msg;
 }
 
@@ -227,8 +224,8 @@ export async function getRandom(ctx: Context, session: Session, min: number, max
     "data" : data,
     "success" : 0
   }
-  log.info("Sent:");
-  log.info(msg);
+  log.debug("Sent:");
+  log.debug(msg);
   return msg;
 }
 
@@ -256,8 +253,8 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
       "success" : 0
     };
   }
-  log.info("Sent:");
-  log.info(msg);
+  log.debug("Sent:");
+  log.debug(msg);
   return msg;
 }
 
@@ -267,7 +264,6 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
   log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
-  let data : object;
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.rwAPI==undefined){
@@ -277,42 +273,36 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
       "data": "未指定 API",
       "success": 2
     };
-    log.info("Sent:");
-    log.info(msg);
+    log.warn("Sent:");
+    log.warn(msg);
     return msg;
   }
   // 发送请求
-  const response = await fun.getHttp(log,ctx.config.rwAPI+"?format=json",ctx.config.timeout);
+  const response = await fun.request<APIRandomWord>(ctx.config.rwAPI+"?format=json", {}, ctx.config.timeout, log);
   if (response.success) {
-    data = response.data;
     // 发送消息
     msg = {
       "time" : time,
-      "data" : data['data'],
+      "data" : response.data,
       "success" : 0
     };
-    log.info("Sent:");
-    log.info(msg);
+    log.debug("Sent:");
+    log.debug(msg);
   } else {
-    if (response.error){
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : (data['name'] === 'AbortError') ? session.text('.error') : data['message'],
-        "success" : 2
-      };
-      log.info("Sent:");
-      log.info(msg);
-    } else {
-      data = response.data;
-      msg = {
-        "time" : time,
-        "data" : data['data'],
-        "success" : 1
-      };
-      log.info("Sent:");
-      log.info(msg);
+    let err: string;
+    if (response.code) {
+      err = (response.isJson) ? response.error['data'] : response.error;
     }
+    else {
+      err = response.error.message;
+    }
+    msg = {
+      "time" : time,
+      "data" : err,
+      "success" : 1
+    };
+    log.warn("Sent:");
+    log.warn(msg);
   }
   return msg;
 }
@@ -458,7 +448,8 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   if (response.success) {
     log.debug(response.data);
     // 发送消息
-    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
+    const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
+    if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
     log.debug("Sent:");
     log.debug(response.data[0].url);
   } else {
@@ -492,7 +483,6 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
   // 发送请求
   const response = await fun.request<APIUserInfo>(ctx.config.qqAPI+`?qq=${qq}`, {}, ctx.config.timeout, log);
   if (response.success) {
-    log.info(response.data);
     const fullHtml = await fun.readUserCardFile(response.data);
     const page = await ctx.puppeteer.page();
     await page.setViewport({
