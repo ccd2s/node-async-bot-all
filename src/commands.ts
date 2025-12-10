@@ -533,6 +533,10 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
     log.warn('未引用任何信息');
     return 1;
   }
+  if (session.quote.user.id==session.event.selfId) {
+    await session.send(session.text(".matroska", {"quote" : h.quote(session.messageId)}));
+    return 1;
+  }
   const user = await session.bot.getUser(session.quote.user.id, session.channelId);
   const msg:string = session.quote.content as string;
   if (!user.name || !user.avatar) {
