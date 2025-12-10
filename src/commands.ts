@@ -283,7 +283,7 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
     // 发送消息
     msg = {
       "time" : time,
-      "data" : response.data,
+      "data" : response.data.data,
       "success" : 0
     };
     log.debug("Sent:");
@@ -544,12 +544,17 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
   const html = await fun.readUserMsgFile(user.name, user.avatar, msg);
   try {
     await page.setViewport({
-      width: 400,
-      height: 800,
+      width: 450,
+      height: 1,
       deviceScaleFactor: 2
     });
     await page.setContent(html, { waitUntil: 'networkidle0' });
-    // 5. 选定元素截图 (这是最关键的一步)
+    const { width, height } = await page.evaluate(() => ({
+      width: document.body.scrollWidth + 50,
+      height: document.body.scrollHeight
+    }));
+    await page.setViewport({ width, height, deviceScaleFactor: 2 });
+    // 选定元素截图
     const element = await page.$('#target-element');
     if (element) {
       const image = await element.screenshot({
