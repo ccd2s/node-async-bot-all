@@ -297,3 +297,19 @@ export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
   }
   return card;
 }
+
+// 读取信息文件
+export async function readUserMsgFile(userName:string, userAvatar:string, msg:string): Promise<string> {
+  let html: string;
+  try{
+    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userMsg.html";
+    html = await fs.promises.readFile(aPath, 'utf8');
+    html = html.toString()
+      .replace("{userData.avatarUrl}", userAvatar)
+      .replace("{userData.username}", userName)
+      .replace("{userData.message}", msg);
+  } catch (error) {
+    html = error.message;
+  }
+  return html;
+}

@@ -131,3 +131,12 @@ commands:
         {quote}{time}
         获取失败：{data}
       command: QQ 号不正确。
+  msg2img:
+    description: 引用一个消息并使用此指令，即可将消息转图。
+    messages:
+      msg: |-
+        {quote}{image}
+      failed: |-
+        {quote}{time}
+        获取失败：{data}
+      null: 未引用任何消息。

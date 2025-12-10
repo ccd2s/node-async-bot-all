@@ -485,15 +485,27 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
   if (response.success) {
     const fullHtml = await fun.readUserCardFile(response.data);
     const page = await ctx.puppeteer.page();
-    await page.setViewport({
-      width: 450,
-      height: 650,
-      deviceScaleFactor: 2
-    });
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-    const image = await page.screenshot({ type: 'png', omitBackground: true });
-    const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
-    if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+    try {
+      await page.setViewport({
+        width: 450,
+        height: 650,
+        deviceScaleFactor: 2
+      });
+      await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+      const { width, height } = await page.evaluate(() => ({
+        width: document.body.scrollWidth,
+        height: document.body.scrollHeight
+      }));
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+      const image = await page.screenshot({ type: 'png', omitBackground: true });
+      await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+    } catch(err) {
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data":"图片渲染失败"}));
+      log.error('图片渲染失败:', err);
+      return 1;
+    } finally {
+      if (page && !page.isClosed()) await page.close()
+    }
     log.debug("Sent: Image");
   } else {
     if (response.code){
@@ -506,6 +518,57 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
       log.warn("Sent:");
       log.warn(response.error);
     }
+  }
+  return 0;
+}
+
+// 指令 消息转图
+export async function getMsg(ctx: Context, session: Session):Promise<number> {
+  const log = ctx.logger('getQQInfo');
+  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  // 获取香港时区当前时间
+  const time = fun.getHongKongTime();
+  if (!session.quote || !session.quote.user) {
+    await session.send(session.text(".null"));
+    log.warn('未引用任何信息');
+    return 1;
+  }
+  const user = await session.bot.getUser(session.quote.user.id, session.channelId);
+  const msg:string = session.quote.content as string;
+  if (!user.name || !user.avatar) {
+    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "获取用户信息失败。"}));
+    log.error('获取用户信息失败');
+    return 1;
+  }
+  const page = await ctx.puppeteer.page();
+  const html = await fun.readUserMsgFile(user.name, user.avatar, msg);
+  try {
+    await page.setViewport({
+      width: 400,
+      height: 800,
+      deviceScaleFactor: 2
+    });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // 5. 选定元素截图 (这是最关键的一步)
+    const element = await page.$('#target-element');
+    if (element) {
+      const image = await element.screenshot({
+        type: 'png',
+        omitBackground: true // 使得 CSS 中未定义的背景部分透明
+      });
+      await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
+      log.debug("Sent: Image");
+    } else {
+      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "未找到目标元素。"}));
+      log.error('未找到目标元素');
+      return 1;
+    }
+  } catch(err) {
+    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data":"图片渲染失败"}));
+    log.error('图片渲染失败:', err);
+    return 1;
+  } finally {
+    if (page && !page.isClosed()) await page.close()
   }
   return 0;
 }

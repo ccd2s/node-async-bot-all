@@ -177,4 +177,10 @@ export function apply(ctx: Context) {
       if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
       await command.getQQInfo(ctx, <Session>session, qq);
     });
+  ctx.command('msg2img')
+    .alias('消息转图')
+    .alias('m')
+    .action(async ({ session }) => {
+      await command.getMsg(ctx, <Session>session);
+    });
 }
