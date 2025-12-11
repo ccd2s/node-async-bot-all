@@ -18,6 +18,17 @@ commands:
         【MC 服务器 {count}】
         ➣ 查询失败：{data}
         ➣ 请稍后重试。
+        ➣ 备注：{note}
+      listA2S: |-
+        【A2S 服务器 {count}】
+        ➣ {version}：{players}
+        ➣ 机器人：{bots}
+        ➣ 备注：{note}
+      listFailedA2S: |-
+        【A2S 服务器 {count}】
+        ➣ 查询失败：{data}
+        ➣ 请稍后重试。
+        ➣ 备注：{note}
       forbidden: |-
         {time}
         此指令不允许在本群使用。

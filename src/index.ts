@@ -22,14 +22,19 @@ interface botDataTables {
 export const name = 'node-async-bot-all';
 export const usage = '这是一个私有插件。';
 
-export interface ConfigCxV2 {
+export interface ConfigCxV3 {
   id: string,
-  api: Array<string>,
-  note: Array<string>
+  server: Array<ConfigV3Server>
+}
+
+export interface ConfigV3Server {
+  api: string,
+  note: string,
+  type: "mc" | "a2s" | null | undefined
 }
 
 export interface Config {
-  cxV2: Array<ConfigCxV2>,
+  cxV3: Array<ConfigCxV3>,
   rwAPI:string,
   timeout:number,
   baAPI:string[],
@@ -46,13 +51,18 @@ export const Config: Schema<Config> =
       timeout: Schema.number().default(8000).description('超时时间（毫秒）')
     }).description('基础'),
     Schema.object({
-      cxV2: Schema.array(
+      cxV3: Schema.array(
         Schema.object({
-          id: Schema.string().required().description('查询 群'),
-          api: Schema.array(String).description('查询 API'),
-          note: Schema.array(String).description('查询 备注')
+          id: Schema.string().description('查询 群'),
+          server: Schema.array(
+            Schema.object({
+              api: Schema.string().description('查询 API | HOST'),
+              note: Schema.string().description('查询 备注'),
+              type: Schema.union(["mc", "a2s"]).description('查询 类型')
+            })
+          ).description('查询 服务器')
         })
-      ).default([]).description('查询的 API 和 群')
+      ).default([]).description('查询的群')
     }).description('查询'),
     Schema.object({
       rwAPI: Schema.string().default('https://api.tasaed.top/rw/').description('随机文本 API')

@@ -1,7 +1,7 @@
 import { Context, Session, h, sleep } from 'koishi';
 import * as fun from './fun';
 import { Installer } from "@koishijs/plugin-market";
-import { ConfigCxV2 } from "./index";
+import { ConfigCxV3 } from "./index";
 import Puppeteer from 'koishi-plugin-puppeteer';
 
 declare module 'koishi' {
@@ -67,83 +67,123 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
   let msg : object;
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
-  const index = ctx.config.cxV2.findIndex((item:ConfigCxV2) => item.id === session.event.guild?.id);
+  const index = ctx.config.cxV3.findIndex((item:ConfigCxV3) => item.id === session.event.guild?.id);
   if (index !== -1){
-    const api = ctx.config.cxV2[index]['api']
-    if (api==undefined){
+    const server = ctx.config.cxV3[index].server
+    if (server==undefined){
       // 未指定查询 API
       msg = {
         "time": time,
-        "data": "未指定查询 API",
+        "data": "未指定查询 服务器",
         "success": 2
       };
       log.warn("Sent:");
       log.warn(msg);
       return msg;
     }
+    // 设立必要变量
     let count = 0;
     let list = "";
-    for (const item of api) {
-      const note = ctx.config.cxV2[index]['note'][count];
+    for (const item of server) {
+      // 设立必要变量
+      const note = item.note;
+      const type = item.type;
+      const api = item.api;
       count++;
-      // 请求
-      const response = await fun.request<APIServer>(item, {}, ctx.config.timeout, log);
-      if (response.success) {
-        // 成功
-        if (response.data.list==null) {
-          // 无玩家
+      // 类型判断
+      if (type == "a2s"){
+        // a2s 服务器
+        const info = await fun.queryA2S(api, log);
+        if (info.success){
+          // 成功
           const temp = {
             "count": count,
-            "players": response.data.players,
-            "version": response.data.version,
+            "players": info.players,
+            "version": info.version,
+            "bots": info.bots,
             "note": note ?? '无'
           };
           log.info(`Server ${count}:`);
           log.info(temp);
-          list = list+"\n"+session.text('.listNoPlayer',temp);
-        }
-        else {
-          // 有玩家
+          list = list+"\n"+session.text('.listA2S',temp);
+        } else {
+          // 失败
+          let err:string;
+          if ((info.error).toString().includes("Timeout reached. Possible reasons: You are being rate limited; Timeout too short; Wrong server host configured")){
+            err = "请求超时。";
+          } else {
+            err = "未知错误。";
+          }
           const temp = {
             "count": count,
-            "players": response.data.players,
-            "version": response.data.version,
-            "list": response.data.list
-              .join(', '),
-            "note": note ?? '无'
+            "data": err,
+            "note": note
           };
-          log.info(`Server ${count}:`);
-          log.info(temp);
-          list = list+"\n"+session.text('.list',temp);
+          log.error(`Server ${count}:`);
+          log.error(temp);
+          list = list+"\n"+session.text('.listFailedA2S',temp);
         }
       } else {
-        // 失败
-        let err: string;
-        if (response.code) {
-          err = (response.isJson) ? response.error['data'] : response.error;
-          // 服务器关闭
-          if (err.includes("Connection refused")) {
-            err = session.text('.close');
-          } else if (err.includes("No route to host")) {
-            err = session.text('.host');
-          } else if (err.includes("Connection timed out")) {
-            err = session.text('.timeout');
-          } else if (err.includes("Server returned too few data")) {
-            err = session.text('.fewData');
-          } else if (err.includes("Server read timed out")) {
-            err = session.text('.timeout2');
+        // 默认 mc 服务器，请求
+        const response = await fun.request<APIServer>(api, {}, ctx.config.timeout, log);
+        if (response.success) {
+          // 成功
+          if (response.data.list==null) {
+            // 无玩家
+            const temp = {
+              "count": count,
+              "players": response.data.players,
+              "version": response.data.version,
+              "note": note ?? '无'
+            };
+            log.info(`Server ${count}:`);
+            log.info(temp);
+            list = list+"\n"+session.text('.listNoPlayer',temp);
           }
+          else {
+            // 有玩家
+            const temp = {
+              "count": count,
+              "players": response.data.players,
+              "version": response.data.version,
+              "list": response.data.list
+                .join(', '),
+              "note": note ?? '无'
+            };
+            log.info(`Server ${count}:`);
+            log.info(temp);
+            list = list+"\n"+session.text('.list',temp);
+          }
+        } else {
+          // 失败
+          let err: string;
+          if (response.code) {
+            err = (response.isJson) ? response.error['data'] : response.error;
+            // 服务器关闭
+            if (err.includes("Connection refused")) {
+              err = session.text('.close');
+            } else if (err.includes("No route to host")) {
+              err = session.text('.host');
+            } else if (err.includes("Connection timed out")) {
+              err = session.text('.timeout');
+            } else if (err.includes("Server returned too few data")) {
+              err = session.text('.fewData');
+            } else if (err.includes("Server read timed out")) {
+              err = session.text('.timeout2');
+            }
+          }
+          else {
+            err = response.error.message;
+          }
+          const temp = {
+            "count": count,
+            "data": err,
+            "note": note
+          };
+          log.error(`Server ${count}:`);
+          log.error(temp);
+          list = list+"\n"+session.text('.listFailed',temp);
         }
-        else {
-          err = response.error.message;
-        }
-        const temp = {
-          "count": count,
-          "data": err,
-        };
-        log.error(`Server ${count}:`);
-        log.error(temp);
-        list = list+"\n"+session.text('.listFailed',temp);
       }
     }
     msg = {

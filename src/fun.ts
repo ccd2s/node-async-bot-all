@@ -1,11 +1,21 @@
 import os from 'os';
 import fs from 'fs';
 import ping from 'ping';
+import { queryGameServerInfo } from 'steam-server-query';
 import path from 'path';
 import { HttpResponse } from "./index";
 import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 import { APIUserInfo } from "./commands";
+
+export type serverInfo = | {
+  players: string;
+  protocol: number;
+  version: string;
+  bots: number;
+  port: number;
+  success: true;
+} | { success: false; error: any; };
 
 // 获取系统名称
 function getSystemName(): string {
@@ -312,4 +322,26 @@ export async function readUserMsgFile(userName:string, userAvatar:string, msg:st
     html = error.message;
   }
   return html;
+}
+
+// A2S
+export async function queryA2S(host:string, log:any):Promise<serverInfo> {
+  try {
+    const playerResponse = await queryGameServerInfo(host);
+    log?.info("Server Info:", playerResponse);
+    return {
+      players: playerResponse.players + "/" + playerResponse.maxPlayers,
+      protocol: playerResponse.protocol,
+      version: playerResponse.version,
+      bots: playerResponse.bots,
+      port: playerResponse.port as number,
+      success: true
+    };
+  } catch (e) {
+    log?.error("A2S Error:", e);
+    return {
+      error: e,
+      success: false
+    };
+  }
 }
