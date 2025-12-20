@@ -59,10 +59,34 @@ export interface APIUserInfo {
   last_updated: string;
 }
 
+export interface APINews {
+  appnews: AppNews;
+}
+
+interface AppNews {
+  appid: number;
+  newsitems: NewsItem[];
+  count: number;
+}
+
+interface NewsItem {
+  gid: string;
+  title: string;
+  url: string;
+  is_external_url: boolean;
+  author: string;
+  contents: string;
+  feedlabel: string;
+  date: number; // Unix timestamp (seconds)
+  feedname: string;
+  feed_type: number;
+  appid: number;
+}
+
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('cx');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg : object;
   // 获取香港时区当前时间
@@ -207,7 +231,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
 // 指令 Status
 export async function getStatus(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('status');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -245,7 +269,7 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
 // 指令 Random
 export async function getRandom(ctx: Context, session: Session, min: number, max: number):Promise<Object> {
   const log = ctx.logger('random');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -272,7 +296,7 @@ export async function getRandom(ctx: Context, session: Session, min: number, max
 // 指令 Info
 export async function getInfo(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('info');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
@@ -301,7 +325,7 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
 // 指令 RW
 export async function getRandomWord(ctx: Context, session: Session):Promise<Object> {
   const log = ctx.logger('rw');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
   // 获取香港时区当前时间
@@ -351,7 +375,7 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
 export async function getBlueArchive(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('ba');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.baAPI==undefined){
@@ -377,7 +401,7 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
 export async function serverTest(ctx: Context, session: Session):Promise<Object> {
   // 日志
   const log = ctx.logger('serverTest');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   const host = ctx.config.serverPing[`${session.event.guild?.id}`];
@@ -416,7 +440,7 @@ export async function serverTest(ctx: Context, session: Session):Promise<Object>
 // 指令 Meme
 export async function getMeme(ctx: Context, session: Session, count: number):Promise<Number> {
   const log = ctx.logger('getMeme');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
   let msg: object;
   // 获取香港时区当前时间
@@ -473,7 +497,7 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
 export async function getCat(ctx: Context, session: Session):Promise<Number> {
   // 日志
   const log = ctx.logger('cat');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.catAPI==undefined){
@@ -512,7 +536,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
 // 指令 获取 qq 信息
 export async function getQQInfo(ctx: Context, session: Session, qq: string):Promise<number> {
   const log = ctx.logger('getQQInfo');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (ctx.config.qqAPI==undefined){
@@ -565,7 +589,7 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
 // 指令 消息转图
 export async function getMsg(ctx: Context, session: Session):Promise<number> {
   const log = ctx.logger('getQQInfo');
-  log.debug(`Got: {"form":"${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   if (!session.quote || !session.quote.user) {
@@ -620,4 +644,49 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
     if (page && !page.isClosed()) await page.close()
   }
   return 0;
+}
+
+// 定时任务 SL News
+export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boolean, data: string, msg?: string}> {
+  const log = ctx.logger('getNewsMsg');
+  const response = await fun.request<APINews>("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1", {}, ctx.config.timeout, log);
+  if (response.success) {
+    if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid){
+      log.debug("无新闻");
+      return {success: false, data: ""};
+    }
+    const page = await ctx.puppeteer.page();
+    const html = await fun.readNewsFile(response.data);
+    try {
+      await page.setViewport({
+        width: 800,
+        height: 800,
+        deviceScaleFactor: 2
+      });
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const { width, height } = await page.evaluate(() => ({
+        width: document.body.scrollWidth,
+        height: document.body.scrollHeight
+      }));
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+      // 截图
+      const image = await page.screenshot({
+        type: 'png',
+        fullPage: true,
+        omitBackground: true // 使得 CSS 中未定义的背景部分透明
+      });
+      // 写入数据库
+      if(type==0) await ctx.database.upsert('botData',  [
+        { id: "newsId", data: response.data.appnews.newsitems[0].gid }
+      ]);
+      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NW 发布了一个新闻（原文英语）："+response.data.appnews.newsitems[0].title};
+    } catch(err) {
+      log.error('图片渲染失败:', err);
+      return {success: false, data: "图片渲染失败"};
+    } finally {
+      if (page && !page.isClosed()) await page.close()
+    }
+  } else {
+    return {success: false, data: "请求 Steam API 失败"};
+  }
 }

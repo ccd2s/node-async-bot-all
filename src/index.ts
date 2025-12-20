@@ -1,8 +1,9 @@
-import { Context, Dict, Schema, Session } from 'koishi';
+import { Context, Dict, Schema, Session, h, sleep } from 'koishi';
 import * as command from './commands';
+import { } from "koishi-plugin-cron";
 import { version } from '../package.json';
 
-export const inject = ['database', 'installer', 'puppeteer'];
+export const inject = ['database', 'installer', 'puppeteer', 'cron'];
 
 export type HttpResponse<T> =
   | { success: true; data: T; }
@@ -11,6 +12,11 @@ export type HttpResponse<T> =
 declare module 'koishi' {
   interface Tables {
     botData: botDataTables;
+  }
+  interface Events {
+    // 方法名称对应自定义事件的名称
+    // 方法签名对应事件的回调函数签名
+    "node-async/news"(): void;
   }
 }
 
@@ -42,7 +48,8 @@ export interface Config {
   steamAPI:string,
   memesAPI:Dict<string>,
   catAPI:string,
-  qqAPI:string;
+  qqAPI:string,
+  slNews:string[];
 }
 
 export const Config: Schema<Config> =
@@ -85,6 +92,9 @@ export const Config: Schema<Config> =
     Schema.object({
       qqAPI: Schema.string().default('https://uapis.cn/api/v1/social/qq/userinfo').description('获取 QQ 信息 API')
     }).description('获取 QQ 信息'),
+    Schema.object({
+      slNews: Schema.array(String).default(['']).description('{platform}:{channelId}')
+    }).description('SL新闻列表')
   ]).description('基础设置');
 
 // 插件注册
@@ -103,6 +113,34 @@ export function apply(ctx: Context) {
       { id: "uptime", data: (date.getTime()).toString().substring(0, 10) },
       { id: "version", data: version }
     ]);
+  });
+  ctx.command("slnews", "手动触发slnews发送到当前会话")
+    .action(async ({session}) => {
+      const outMsg = await command.getNewsMsg(ctx,1);
+      if (outMsg.success) {
+        if(outMsg.msg) session?.send(outMsg.msg);
+        return h('image', { url: `data:image/jpg;base64,${outMsg.data}` });
+      } else {
+        if (outMsg.data=="") return "无可用新闻";
+        return outMsg.data;
+      }
+    });
+  ctx.cron('0 * * * *', async () => {
+    ctx.emit("node-async/news");
+  })
+  ctx.cron('5 * * * *', async () => {
+    ctx.emit("node-async/news");
+  })
+  ctx.on("node-async/news", async () => {
+    const outMsg = await command.getNewsMsg(ctx,0);
+    if (outMsg.success) {
+      if(outMsg.msg) await ctx.broadcast(ctx.config.slNews, outMsg.msg);
+      await sleep(100);
+      await ctx.broadcast(ctx.config.slNews, h('image', { url: `data:image/jpg;base64,${outMsg.data}` }));
+    } else {
+      if (outMsg.data=="") return;
+      await ctx.broadcast(ctx.config.slNews, outMsg.data);
+    }
   });
   // 指令注册
   ctx.command('cxGame')

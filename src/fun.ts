@@ -6,7 +6,9 @@ import path from 'path';
 import { HttpResponse } from "./index";
 import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
-import { APIUserInfo } from "./commands";
+import { APINews, APIUserInfo } from "./commands";
+import bbobHTML from '@bbob/html';
+import presetHTML5 from '@bbob/preset-html5';
 
 export type serverInfo = | {
   players: string;
@@ -344,4 +346,22 @@ export async function queryA2S(host:string, log:any):Promise<serverInfo> {
       success: false
     };
   }
+}
+
+// 读取信息文件
+export async function readNewsFile(info: APINews): Promise<string> {
+  let html: string;
+  try{
+    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slNews.html";
+    html = await fs.promises.readFile(aPath, 'utf8');
+    const content = bbobHTML(info.appnews.newsitems[0].contents, presetHTML5())
+    const date = Number(info.appnews.newsitems[0].date+"000");
+    html = html.toString()
+      .replace("{date}", new Date(date).toLocaleString())
+      .replace("{title}", info.appnews.newsitems[0].title)
+      .replace("{content}", content);
+  } catch (error) {
+    html = error.message;
+  }
+  return html;
 }

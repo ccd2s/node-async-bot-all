@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1b2838; /* Steam 经典深蓝背景 */
+      font-family: "Motiva Sans", Arial, Helvetica, sans-serif;
+      color: #acb2b8;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: #1b2838;
+    }
+    .content-padding {
+      padding: 30px;
+    }
+    .date {
+      color: #808589;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .title {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: bold;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .body-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #d1d1d1;
+    }
+    .body-text p {
+      margin-bottom: 20px;
+    }
+    .update-box h3 {
+      color: #1a9fff;
+      margin-top: 0;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+  </style>
+  <title>News</title>
+</head>
+<body>
+<div class="container">
+  <div class="content-padding">
+    <div class="date">{date}</div>
+    <div class="title">{title}</div>
+
+    <div class="body-text">
+      {content}
+    </div>
+  </div>
+</div>
+</body>
+</html>
