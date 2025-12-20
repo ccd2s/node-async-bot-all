@@ -651,7 +651,7 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
   const log = ctx.logger('getNewsMsg');
   const response = await fun.request<APINews>("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1", {}, ctx.config.timeout, log);
   if (response.success) {
-    if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid){
+    if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid&&type!=1){
       log.debug("无新闻");
       return {success: false, data: ""};
     }
@@ -679,7 +679,7 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
       if(type==0) await ctx.database.upsert('botData',  [
         { id: "newsId", data: response.data.appnews.newsitems[0].gid }
       ]);
-      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NW 发布了一个新闻（原文英语）："+response.data.appnews.newsitems[0].title};
+      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NorthWood 发布了一个新闻（原文英语）："+response.data.appnews.newsitems[0].title};
     } catch(err) {
       log.error('图片渲染失败:', err);
       return {success: false, data: "图片渲染失败"};

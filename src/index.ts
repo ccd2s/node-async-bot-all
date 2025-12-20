@@ -118,8 +118,7 @@ export function apply(ctx: Context) {
     .action(async ({session}) => {
       const outMsg = await command.getNewsMsg(ctx,1);
       if (outMsg.success) {
-        if(outMsg.msg) session?.send(outMsg.msg);
-        return h('image', { url: `data:image/jpg;base64,${outMsg.data}` });
+        return `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`;
       } else {
         if (outMsg.data=="") return "无可用新闻";
         return outMsg.data;
@@ -128,15 +127,13 @@ export function apply(ctx: Context) {
   ctx.cron('0 * * * *', async () => {
     ctx.emit("node-async/news");
   })
-  ctx.cron('5 * * * *', async () => {
+  ctx.cron('18 * * * *', async () => {
     ctx.emit("node-async/news");
   })
   ctx.on("node-async/news", async () => {
     const outMsg = await command.getNewsMsg(ctx,0);
     if (outMsg.success) {
-      if(outMsg.msg) await ctx.broadcast(ctx.config.slNews, outMsg.msg);
-      await sleep(100);
-      await ctx.broadcast(ctx.config.slNews, h('image', { url: `data:image/jpg;base64,${outMsg.data}` }));
+      await ctx.broadcast(ctx.config.slNews, `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`);
     } else {
       if (outMsg.data=="") return;
       await ctx.broadcast(ctx.config.slNews, outMsg.data);
