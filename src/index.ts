@@ -3,7 +3,7 @@ import { Context, Dict, Schema, Session, h } from 'koishi';
 import { } from "koishi-plugin-cron";
 // node-async-bot-all
 import * as command from './commands.ts';
-import { version } from '../package.json' with {type: 'json'};
+import { version } from '../package.json';
 
 // 在上下文中注入
 export const inject = ['database', 'installer', 'puppeteer', 'cron'];
