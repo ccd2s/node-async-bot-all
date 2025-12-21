@@ -2,8 +2,8 @@
 import { Context, Dict, Schema, Session, h } from 'koishi';
 import { } from "koishi-plugin-cron";
 // node-async-bot-all
-import * as command from './commands';
-import { version } from '../package.json';
+import * as command from './commands.ts';
+import { version } from '../package.json' with {type: 'json'};
 
 // 在上下文中注入
 export const inject = ['database', 'installer', 'puppeteer', 'cron'];
@@ -135,10 +135,12 @@ export function apply(ctx: Context) {
   // sl 新闻 定时任务与指令
   ctx.command("slnews")
     .action(async () => {
+      const log = ctx.logger("slnews");
       const outMsg = await command.getNewsMsg(ctx,1);
       if (outMsg.success) {
         return `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`;
       } else {
+        log.warn(outMsg);
         if (outMsg.data=="") return "无可用新闻";
         return outMsg.data;
       }
@@ -168,7 +170,7 @@ export function apply(ctx: Context) {
   // 指令注册
   ctx.command('cxGame')
     .action(async ({ session }) => {
-      const cx = await command.getServer(ctx, <Session>session);
+      const cx = await command.getServer(ctx, session as Session);
       if (cx['success']==0) {
         return session?.text('.msg',cx);
       } else if (cx['success']==1) {
@@ -181,7 +183,7 @@ export function apply(ctx: Context) {
     .alias('stats')
     .alias('状态')
     .action(async ({ session }) => {
-      const status = await command.getStatus(ctx, <Session>session);
+      const status = await command.getStatus(ctx, session as Session);
       if (status['success']==0) {
         return session?.text('.msg',status);
       } else {
@@ -191,12 +193,12 @@ export function apply(ctx: Context) {
   ctx.command('random [最小数:number] [最大数:number]')
     .alias('随机数')
     .action(async ({ session },min,max) => {
-      const random = await command.getRandom(ctx,<Session>session,min,max);
+      const random = await command.getRandom(ctx,session as Session,min,max);
       return session?.text('.msg',random);
     });
   ctx.command('info')
     .action(async ({ session }) => {
-      const info = await command.getInfo(ctx,<Session>session);
+      const info = await command.getInfo(ctx,session as Session);
       if (info['success']==0){
         return session?.text('.msg',info);
       }
@@ -206,7 +208,7 @@ export function apply(ctx: Context) {
     });
   ctx.command('rw')
     .action(async ({ session }) => {
-      const rw = await command.getRandomWord(ctx,<Session>session);
+      const rw = await command.getRandomWord(ctx,session as Session);
       if (rw['success']==0){
         return session?.text('.msg',rw);
       }
@@ -217,35 +219,35 @@ export function apply(ctx: Context) {
   ctx.command('randomBA')
     .alias('随机ba图')
     .action(async ({ session }) => {
-      await command.getBlueArchive(ctx, <Session>session);
+      await command.getBlueArchive(ctx, session as Session);
     });
   ctx.command('centerServerTest')
     .alias('测测中心服务器')
     .action(async ({ session }) => {
-      const msg = await command.centerServerTest(ctx, <Session>session);
+      const msg = await command.centerServerTest(ctx, session as Session);
       return session?.text(msg.success, msg.data);
     });
   ctx.command('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
-      await command.getMeme(ctx, <Session>session, count);
+      await command.getMeme(ctx, session as Session, count);
     });
   ctx.command('randomCat')
     .alias('随机猫猫图')
     .alias('随机猫猫')
     .action(async ({ session }) => {
-      await command.getCat(ctx, <Session>session);
+      await command.getCat(ctx, session as Session);
     });
   ctx.command('getQQInfo <QQ号:string>')
     .alias('获取QQ信息')
     .action(async ({ session }, qq) => {
       if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
-      await command.getQQInfo(ctx, <Session>session, qq);
+      await command.getQQInfo(ctx, session as Session, qq);
     });
   ctx.command('msg2img')
     .alias('消息转图')
     .alias('m')
     .action(async ({ session }) => {
-      await command.getMsg(ctx, <Session>session);
+      await command.getMsg(ctx, session as Session);
     });
 }

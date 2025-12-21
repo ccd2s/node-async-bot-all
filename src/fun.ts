@@ -3,15 +3,19 @@ import os from 'os';
 import fs from 'fs';
 import path from 'path';
 // koishi and plugin
-import { Context, FlatPick, Random, Time } from "koishi";
+import { Context, FlatPick, Random, Time ,sleep } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // node-async-bot-all types
-import { APINews, APIUserInfo } from "./commands";
+import { APINews, APIUserInfo } from "./commands.ts";
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from 'steam-server-query';
 // @bbob/html preset-html5 ^4.3.1
 import bbobHTML from '@bbob/html';
 import presetHTML5 from '@bbob/preset-html5';
+// bing-translate-api ^4.2.0
+import { translate } from 'bing-translate-api';
+// minecraft-server-util ^5.4.4
+import { JavaStatusResponse, status } from 'minecraft-server-util';
 
 // HTTP 请求类型
 export type HttpResponse<T> =
@@ -145,7 +149,7 @@ export async function readInfoFile(ctx: Context): Promise<string> {
         "&version;",
         (await ctx.database.get("botData", "version"))[0].data
       )
-      .replace("&kVersion;",<string>deps.koishi.resolved) // koishi 版本
+      .replace("&kVersion;",deps.koishi.resolved as string) // koishi 版本
       .replace("&nVersion;",process.versions.node);
   } catch (error) {
     info = error.message;
@@ -354,22 +358,82 @@ export async function queryA2S(host:string, log:any):Promise<serverInfo> {
 }
 
 // 读取Steam新闻文件
-export async function readNewsFile(info: APINews): Promise<string> {
+export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
   let html: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slNews.html";
     html = await fs.promises.readFile(aPath, 'utf8');
+    // 翻译
+    const content = info.appnews.newsitems[0].contents
+      .replace("[spoiler]", "")
+      .replace("[/spoiler]", "")
+      .replace(/\r\n/g, '\n')      // 统一换行符
+      .replace(/\n{3,}/g, '\n\n')  // 多个换行压缩
+      .split('\n\n')
+      .map(p => p.trim())
+      .filter(Boolean);
+    const bilingualParagraphs: string[] = [];
+    for (const paragraph of content) {
+      const zh = await translateAPI(log, paragraph);
+      bilingualParagraphs.push(
+        paragraph,
+        zh,
+        "" // 空行用于分隔段落
+      );
+    }
+    const finalText = bilingualParagraphs.join("<br />").replace(/<br \/>{2,}/g, '<br />');
     // bbcode 转 html
-    const content = bbobHTML(info.appnews.newsitems[0].contents, presetHTML5())
+    const contentHtml = bbobHTML(finalText, presetHTML5())
     // Steam 给的时间戳是秒级别的，得补3个0才正常
     const date = Number(info.appnews.newsitems[0].date+"000");
     // 替换
     html = html.toString()
       .replace("{date}", new Date(date).toLocaleString())
       .replace("{title}", info.appnews.newsitems[0].title)
-      .replace("{content}", content);
+      .replace("{content}", contentHtml);
   } catch (error) {
-    html = error.message;
+    log.error(error);
+    log.error(error.message);
+    return [error, error.message];
   }
-  return html;
+  return [html];
+}
+
+/**
+ * 翻译 API
+ */
+export async function translateAPI(log:any, text:string):Promise<string> {
+  const ms = random(0, 0, 250);
+  await sleep(ms);
+  await translate(text, "en", "zh-Hans")
+    .then(result => {
+      text = result?.translation as string;
+    })
+    .catch(err => {
+      log.error(err);
+    });
+  return text;
+}
+
+/**
+ * Minecraft SLP
+ */
+export async function slpInfo(log:any, host:string, port:number, timeout?:number)
+  : Promise<{ success: true, data: JavaStatusResponse } | { success: false, data: string }>
+{
+  try {
+    const info = await status(host, port, {timeout: timeout as number});
+    log.info(info);
+    return {
+      "success": true,
+      "data": info
+    };
+  } catch (error) {
+    log.error(error);
+    return {
+      "success": false,
+      "data": error.message
+    };
+  }
+
 }

@@ -9,6 +9,7 @@
     "strict": true,
     "useUnknownInCatchVariables": false,
     "noImplicitAny": false,
+    "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true,
     "composite": true,
     "incremental": true,

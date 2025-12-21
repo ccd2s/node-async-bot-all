@@ -3,8 +3,8 @@ import { Context, Session, h, sleep } from 'koishi';
 import { Installer } from "@koishijs/plugin-market";
 import Puppeteer from 'koishi-plugin-puppeteer';
 // node-async-bot-all
-import * as fun from './fun';
-import { ConfigCxV3 } from "./index";
+import * as fun from './fun.ts';
+import { ConfigCxV3 } from "./index.ts";
 
 // 类型声明
 declare module 'koishi' {
@@ -37,16 +37,6 @@ interface APIMeme {
 // 随机文本 API
 interface APIRandomWord {
   data: string;
-  success: boolean;
-}
-
-// MC 服务器 API
-interface APIServer {
-  players: string;
-  text: string;
-  version: string;
-  protocol: string;
-  list: string[] | null;
   success: boolean;
 }
 
@@ -192,15 +182,16 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         }
       } else {
         // 默认 mc 服务器，请求
-        const response = await fun.request<APIServer>(api, {}, ctx.config.timeout, log);
-        if (response.success) {
+        const host = api.split(":");
+        const serverInfo = await fun.slpInfo(log, host[0], Number(host[1]), ctx.config.timeout);
+        if (serverInfo.success) {
           // 成功
-          if (response.data.list==null) {
+          if (serverInfo.data.players.sample==null) {
             // 无玩家
             const temp = {
               "count": count,
-              "players": response.data.players,
-              "version": response.data.version,
+              "players": serverInfo.data.players.online + "/" + serverInfo.data.players.max,
+              "version": serverInfo.data.version.name,
               "note": note ?? '无'
             };
             log.info(`Server ${count}:`);
@@ -211,9 +202,10 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
             // 有玩家
             const temp = {
               "count": count,
-              "players": response.data.players,
-              "version": response.data.version,
-              "list": response.data.list
+              "players": serverInfo.data.players.online + "/" + serverInfo.data.players.max,
+              "version": serverInfo.data.version.name,
+              "list": serverInfo.data.players.sample
+                .map(item => item.name)
                 .join(', '),
               "note": note ?? '无'
             };
@@ -223,24 +215,18 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           }
         } else {
           // 失败
-          let err: string;
-          if (response.code) {
-            err = (response.isJson) ? response.error['data'] : response.error;
-            // 服务器关闭
-            if (err.includes("Connection refused")) {
-              err = session.text('.close');
-            } else if (err.includes("No route to host")) {
-              err = session.text('.host');
-            } else if (err.includes("Connection timed out")) {
-              err = session.text('.timeout');
-            } else if (err.includes("Server returned too few data")) {
-              err = session.text('.fewData');
-            } else if (err.includes("Server read timed out")) {
-              err = session.text('.timeout2');
-            }
-          }
-          else {
-            err = response.error.message;
+          let err = serverInfo.data;
+          // 服务器关闭
+          if (err.includes("connect ECONNREFUSED") || err.includes("Server is offline or unreachable")) {
+            err = session.text('.close');
+          } else if (err.includes("connect EHOSTUNREACH")) {
+            err = session.text('.host');
+          } else if (err.includes("connect ETIMEDOUT")) {
+            err = session.text('.timeout');
+          } else if (err.includes("Ping payload did not match received payload")) {
+            err = session.text('.fewData');
+          } else if (err.includes("Expected server to send packet type")) {
+            err = session.text('.fewData');
           }
           const temp = {
             "count": count,
@@ -440,7 +426,7 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
   if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
   // 撤回消息
-  await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
+  await session.bot.deleteMessage(session.event.guild?.id as string, vid[0]);
   return 0;
 }
 
@@ -605,7 +591,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
     }
   }
   // 撤回消息
-  await session.bot.deleteMessage(<string>session.event.guild?.id, vid[0]);
+  await session.bot.deleteMessage(session.event.guild?.id as string, vid[0]);
   return 0;
 }
 
@@ -741,15 +727,16 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
       log.debug("无新闻");
       return {success: false, data: ""};
     }
+    const html = await fun.readNewsFile(response.data, log);
+    if (html[1]) return {success: false, data: `渲染图片失败`};
     const page = await ctx.puppeteer.page();
-    const html = await fun.readNewsFile(response.data);
     try {
       await page.setViewport({
         width: 800,
         height: 800,
         deviceScaleFactor: 2
       });
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html[0], { waitUntil: 'networkidle0' });
       const { width, height } = await page.evaluate(() => ({
         width: document.body.scrollWidth,
         height: document.body.scrollHeight
@@ -765,7 +752,7 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
       if(type==0) await ctx.database.upsert('botData',  [
         { id: "newsId", data: response.data.appnews.newsitems[0].gid }
       ]);
-      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NorthWood 发布了一个新闻（原文英语）："+response.data.appnews.newsitems[0].title};
+      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NorthWood 发布了一个新闻（原文+机翻）："+response.data.appnews.newsitems[0].title};
     } catch(err) {
       log.error('图片渲染失败:', err);
       return {success: false, data: "图片渲染失败"};
