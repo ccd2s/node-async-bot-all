@@ -1,18 +1,20 @@
-import { Context, Dict, Schema, Session, h, sleep } from 'koishi';
-import * as command from './commands';
+// koishi and plugin
+import { Context, Dict, Schema, Session, h } from 'koishi';
 import { } from "koishi-plugin-cron";
+// node-async-bot-all
+import * as command from './commands';
 import { version } from '../package.json';
 
+// 在上下文中注入
 export const inject = ['database', 'installer', 'puppeteer', 'cron'];
 
-export type HttpResponse<T> =
-  | { success: true; data: T; }
-  | { success: false; error: any; code?: number; isJson: boolean };
-
+// // 类型声明
 declare module 'koishi' {
+  // 数据库定义
   interface Tables {
     botData: botDataTables;
   }
+  // 事件定义
   interface Events {
     // 方法名称对应自定义事件的名称
     // 方法签名对应事件的回调函数签名
@@ -20,25 +22,29 @@ declare module 'koishi' {
   }
 }
 
+// 数据库类型
 interface botDataTables {
   id: string,
   data: string;
 }
 
+// 插件简介
 export const name = 'node-async-bot-all';
 export const usage = '这是一个私有插件。';
 
+// 查询 指令配置项
 export interface ConfigCxV3 {
   id: string,
   server: Array<ConfigV3Server>
 }
 
-export interface ConfigV3Server {
+interface ConfigV3Server {
   api: string,
   note: string,
   type: "mc" | "a2s" | null | undefined
 }
 
+// 配置项类型定义
 export interface Config {
   cxV3: Array<ConfigCxV3>,
   rwAPI:string,
@@ -52,6 +58,7 @@ export interface Config {
   slNews:string[];
 }
 
+/// 配置项
 export const Config: Schema<Config> =
   Schema.intersect([
     Schema.object({
@@ -103,19 +110,22 @@ export function apply(ctx: Context) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'));
   // 应用启动
   ctx.on('ready', async () => {
+    // 数据库表
     ctx.model.extend('botData', {
       // 向表中注入字符串
       id: 'string',
       data: 'string'
     });
+    // 更新表里面的数据
     const date = new Date();
     await ctx.database.upsert('botData',  [
       { id: "uptime", data: (date.getTime()).toString().substring(0, 10) },
       { id: "version", data: version }
     ]);
   });
+  // sl 新闻 定时任务与指令
   ctx.command("slnews", "手动触发slnews发送到当前会话")
-    .action(async ({session}) => {
+    .action(async () => {
       const outMsg = await command.getNewsMsg(ctx,1);
       if (outMsg.success) {
         return `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`;
@@ -124,17 +134,24 @@ export function apply(ctx: Context) {
         return outMsg.data;
       }
     });
+  // 每小时0分
   ctx.cron('0 * * * *', async () => {
     ctx.emit("node-async/news");
   })
-  ctx.cron('18 * * * *', async () => {
+  // 每小时30分
+  ctx.cron('30 * * * *', async () => {
+    // 触发事件
     ctx.emit("node-async/news");
   })
+  // 事件监听
   ctx.on("node-async/news", async () => {
+    // 获取新闻
     const outMsg = await command.getNewsMsg(ctx,0);
     if (outMsg.success) {
+      // 发现新的新闻！
       await ctx.broadcast(ctx.config.slNews, `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`);
     } else {
+      // 啥也没有或者失败
       if (outMsg.data=="") return;
       await ctx.broadcast(ctx.config.slNews, outMsg.data);
     }

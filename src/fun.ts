@@ -1,15 +1,26 @@
+// node
 import os from 'os';
 import fs from 'fs';
-import ping from 'ping';
-import { queryGameServerInfo } from 'steam-server-query';
 import path from 'path';
-import { HttpResponse } from "./index";
+// koishi and plugin
 import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
+// node-async-bot-all types
 import { APINews, APIUserInfo } from "./commands";
+// ping ^1.0.0
+import ping from 'ping';
+// steam-server-query ^1.1.3
+import { queryGameServerInfo } from 'steam-server-query';
+// @bbob/html preset-html5 ^4.3.1
 import bbobHTML from '@bbob/html';
 import presetHTML5 from '@bbob/preset-html5';
 
+// HTTP 请求类型
+export type HttpResponse<T> =
+  | { success: true; data: T; }
+  | { success: false; error: any; code?: number; isJson: boolean };
+
+// A2S 类型
 export type serverInfo = | {
   players: string;
   protocol: number;
@@ -69,26 +80,31 @@ async function getCpuUsage(): Promise<number> {
   return Math.round(usage * 100) / 100; // 保留两位小数
 }
 
-// 系统信息主函数
-export async function getSystemUsage():Promise<Object> {
-  let info: object;
+/**
+ * 系统信息主函数
+ * @return {name: string,cpu: string,memory: string,success: 0}
+ * @return {data: string,success: 1}
+ * */
+export async function getSystemUsage():Promise<{name: string,cpu: string,memory: string,success: 0}|{data: string,success: 1}> {
   try {
-    info = {
+    return {
       "name": getSystemName(),
       "cpu": await getCpuUsage()+"%",
       "memory": getMemoryUsage()+"%",
       "success": 0
     };
   } catch (error) {
-    info = {
+    return {
       "data": error.message,
       "success": 1
     };
   }
-  return info;
 }
 
-// 获取香港时间
+/**
+ * 获取香港时间
+ * @return 如："2025-12-21 12:49:59"
+ * */
 export function getHongKongTime(): string {
   const now = new Date();
 
@@ -123,13 +139,15 @@ export async function readInfoFile(ctx: Context): Promise<string> {
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
     info = await fs.promises.readFile(aPath, 'utf8');
+    // 获取依赖版本
     const deps = await ctx.installer.getDeps();
+    // 替换
     info = info.toString()
       .replace(
         "&version;",
         (await ctx.database.get("botData", "version"))[0].data
       )
-      .replace("&kVersion;",<string>deps.koishi.resolved)
+      .replace("&kVersion;",<string>deps.koishi.resolved) // koishi 版本
       .replace("&nVersion;",process.versions.node);
   } catch (error) {
     info = error.message;
@@ -152,14 +170,17 @@ export function formatTimestampDiff(start: number, end: number): string {
 
 // 计算收发消息数量
 export async function getMsgCount(ctx: Context): Promise<Object> {
+  // 从数据库中获取
   const array = await ctx.database.get('analytics.message', {date:Time.getDateNumber()-1},['type','count']);
-  ctx.logger.info(Time.getDateNumber()-1);
+  // 变量初始化
   let receive = 0;
   let send = 0;
   array.forEach((item:FlatPick<Analytics.Message, "type" | "count">) => {
     if(item.type=='receive'){
+      // 收
       receive=receive+item.count;
     }else {
+      // 发
       send=send+item.count;
     }
   });
@@ -272,7 +293,7 @@ export async function request<T = any>(
   }
 }
 
-// 读取信息文件
+// 读取QQ资料卡文件
 export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
   let card: string;
   try{
@@ -280,6 +301,7 @@ export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
     card = await fs.promises.readFile(aPath, 'utf8');
     let sex_so: string;
     let sex: string;
+    // 性别
     if (userInfo.sex == "male"){
       sex = "♂";
       sex_so = "sex-male";
@@ -287,9 +309,11 @@ export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
       sex = "♀";
       sex_so = "sex-female";
     } else {
+      // 神秘
       sex = "猫娘";
       sex_so = "sex-unknown";
     }
+    // 替换
     card = card.toString()
       .replace("{avatarUrl}", userInfo.avatar_url)
       .replace("{nickname}", userInfo.nickname)
@@ -310,12 +334,13 @@ export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
   return card;
 }
 
-// 读取信息文件
+// 读取消息传图文件
 export async function readUserMsgFile(userName:string, userAvatar:string, msg:string): Promise<string> {
   let html: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userMsg.html";
     html = await fs.promises.readFile(aPath, 'utf8');
+    // 替换
     html = html.toString()
       .replace("{userData.avatarUrl}", userAvatar)
       .replace("{userData.username}", userName)
@@ -329,6 +354,7 @@ export async function readUserMsgFile(userName:string, userAvatar:string, msg:st
 // A2S
 export async function queryA2S(host:string, log:any):Promise<serverInfo> {
   try {
+    // 查询
     const playerResponse = await queryGameServerInfo(host);
     log?.info("Server Info:", playerResponse);
     return {
@@ -340,6 +366,7 @@ export async function queryA2S(host:string, log:any):Promise<serverInfo> {
       success: true
     };
   } catch (e) {
+    // 错误
     log?.error("A2S Error:", e);
     return {
       error: e,
@@ -348,14 +375,17 @@ export async function queryA2S(host:string, log:any):Promise<serverInfo> {
   }
 }
 
-// 读取信息文件
+// 读取Steam新闻文件
 export async function readNewsFile(info: APINews): Promise<string> {
   let html: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slNews.html";
     html = await fs.promises.readFile(aPath, 'utf8');
+    // bbcode 转 html
     const content = bbobHTML(info.appnews.newsitems[0].contents, presetHTML5())
+    // Steam 给的时间戳是秒级别的，得补3个0才正常
     const date = Number(info.appnews.newsitems[0].date+"000");
+    // 替换
     html = html.toString()
       .replace("{date}", new Date(date).toLocaleString())
       .replace("{title}", info.appnews.newsitems[0].title)

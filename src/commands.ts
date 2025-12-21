@@ -1,16 +1,21 @@
+// koishi and plugin
 import { Context, Session, h, sleep } from 'koishi';
-import * as fun from './fun';
 import { Installer } from "@koishijs/plugin-market";
-import { ConfigCxV3 } from "./index";
 import Puppeteer from 'koishi-plugin-puppeteer';
+// node-async-bot-all
+import * as fun from './fun';
+import { ConfigCxV3 } from "./index";
 
+// 类型声明
 declare module 'koishi' {
+  // 上下文
   interface Context {
     installer: Installer;
     puppeteer: Puppeteer;
   }
 }
 
+// 猫猫图 API
 interface APICat {
   [index: number]: {
     id: string;
@@ -20,6 +25,7 @@ interface APICat {
   };
 }
 
+// Meme API
 interface APIMeme {
   data: {
     title: string;
@@ -28,11 +34,13 @@ interface APIMeme {
   success: boolean;
 }
 
+// 随机文本 API
 interface APIRandomWord {
   data: string;
   success: boolean;
 }
 
+// MC 服务器 API
 interface APIServer {
   players: string;
   text: string;
@@ -42,6 +50,9 @@ interface APIServer {
   success: boolean;
 }
 
+/**
+ * QQ 用户 API
+ * */
 export interface APIUserInfo {
   qq: string;
   nickname: string;
@@ -59,6 +70,7 @@ export interface APIUserInfo {
   last_updated: string;
 }
 
+// Steam 新闻 API
 export interface APINews {
   appnews: AppNews;
 }
@@ -77,7 +89,7 @@ interface NewsItem {
   author: string;
   contents: string;
   feedlabel: string;
-  date: number; // Unix timestamp (seconds)
+  date: number; // 时间戳(秒)
   feedname: string;
   feed_type: number;
   appid: number;
@@ -85,6 +97,7 @@ interface NewsItem {
 
 // 指令 cx
 export async function getServer(ctx: Context, session: Session):Promise<Object> {
+  // logger
   const log = ctx.logger('cx');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -230,6 +243,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
 
 // 指令 Status
 export async function getStatus(ctx: Context, session: Session):Promise<Object> {
+  // logger
   const log = ctx.logger('status');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -268,6 +282,7 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
 
 // 指令 Random
 export async function getRandom(ctx: Context, session: Session, min: number, max: number):Promise<Object> {
+  // logger
   const log = ctx.logger('random');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -295,6 +310,7 @@ export async function getRandom(ctx: Context, session: Session, min: number, max
 
 // 指令 Info
 export async function getInfo(ctx: Context, session: Session):Promise<Object> {
+  // logger
   const log = ctx.logger('info');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -324,6 +340,7 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
 
 // 指令 RW
 export async function getRandomWord(ctx: Context, session: Session):Promise<Object> {
+  // logger
   const log = ctx.logger('rw');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -397,7 +414,10 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   return 0;
 }
 
-// 指令 serverTest
+/**
+ * 指令 serverTest
+ * @deprecated
+ * */
 export async function serverTest(ctx: Context, session: Session):Promise<Object> {
   // 日志
   const log = ctx.logger('serverTest');
@@ -439,6 +459,7 @@ export async function serverTest(ctx: Context, session: Session):Promise<Object>
 
 // 指令 Meme
 export async function getMeme(ctx: Context, session: Session, count: number):Promise<Number> {
+  // logger
   const log = ctx.logger('getMeme');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 设立必要变量
@@ -488,6 +509,7 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
     log.warn("Sent:");
     log.warn(msg);
   }
+  // 如果未成功则尝试重发
   const status = await session.send(session.text(msg["success"], msg));
   if (!status) await session.send(session.text(msg["success"], msg));
   return 0;
@@ -511,7 +533,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   const response = await fun.request<APICat>(ctx.config.catAPI, {}, ctx.config.timeout, log);
   if (response.success) {
     log.debug(response.data);
-    // 发送消息
+    // 发送消息 如果未成功则尝试重发
     const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
     if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
     log.debug("Sent:");
@@ -535,6 +557,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
 
 // 指令 获取 qq 信息
 export async function getQQInfo(ctx: Context, session: Session, qq: string):Promise<number> {
+  // logger
   const log = ctx.logger('getQQInfo');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
@@ -588,21 +611,27 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
 
 // 指令 消息转图
 export async function getMsg(ctx: Context, session: Session):Promise<number> {
+  // logger
   const log = ctx.logger('getQQInfo');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
+  // 未引用时退出
   if (!session.quote || !session.quote.user) {
     await session.send(session.text(".null"));
     log.warn('未引用任何信息');
     return 1;
   }
+  // 禁止套娃！
   if (session.quote.user.id==session.event.selfId) {
     await session.send(session.text(".matroska", {"quote" : h.quote(session.messageId)}));
     return 1;
   }
+  // 获取用户信息
   const user = await session.bot.getUser(session.quote.user.id, session.channelId);
+  // 消息内容 支持图片
   const msg:string = session.quote.content as string;
+  // 如果获取失败
   if (!user.name || !user.avatar) {
     await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "获取用户信息失败。"}));
     log.error('获取用户信息失败');
@@ -648,9 +677,12 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
 
 // 定时任务 SL News
 export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boolean, data: string, msg?: string}> {
+  // logger
   const log = ctx.logger('getNewsMsg');
+  // 请求 Steam API
   const response = await fun.request<APINews>("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1", {}, ctx.config.timeout, log);
   if (response.success) {
+    // 防止重复，主动调用跳过检测
     if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid&&type!=1){
       log.debug("无新闻");
       return {success: false, data: ""};
