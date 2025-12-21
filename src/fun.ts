@@ -372,6 +372,7 @@ export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
       .split('\n\n')
       .map(p => p.trim())
       .filter(Boolean);
+    // 原文+翻译
     const bilingualParagraphs: string[] = [];
     for (const paragraph of content) {
       const zh = await translateAPI(log, paragraph);
@@ -381,6 +382,7 @@ export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
         "" // 空行用于分隔段落
       );
     }
+    // 还原为 string
     const finalText = bilingualParagraphs.join("<br />").replace(/<br \/>{2,}/g, '<br />');
     // bbcode 转 html
     const contentHtml = bbobHTML(finalText, presetHTML5())
@@ -403,8 +405,10 @@ export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
  * 翻译 API
  */
 export async function translateAPI(log:any, text:string):Promise<string> {
+  // 随机间隔
   const ms = random(0, 0, 250);
   await sleep(ms);
+  // 翻译
   await translate(text, "en", "zh-Hans")
     .then(result => {
       text = result?.translation as string;
@@ -422,13 +426,16 @@ export async function slpInfo(log:any, host:string, port:number, timeout?:number
   : Promise<{ success: true, data: JavaStatusResponse } | { success: false, data: string }>
 {
   try {
+    // ping
     const info = await status(host, port, {timeout: timeout as number});
     log.info(info);
+    // 成功
     return {
       "success": true,
       "data": info
     };
   } catch (error) {
+    // 失败！
     log.error(error);
     return {
       "success": false,
