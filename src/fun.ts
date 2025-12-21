@@ -7,8 +7,6 @@ import { Context, FlatPick, Random, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // node-async-bot-all types
 import { APINews, APIUserInfo } from "./commands";
-// ping ^1.0.0
-import ping from 'ping';
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from 'steam-server-query';
 // @bbob/html preset-html5 ^4.3.1
@@ -185,26 +183,6 @@ export async function getMsgCount(ctx: Context): Promise<Object> {
     }
   });
   return {"receive":receive,"send":send};
-}
-
-// Ping
-export async function hostPing(host:string):Promise<{success: boolean, data?: any, ip?: string, alive?: boolean, packetLoss?: string}> {
-  try {
-    const tmp = await ping.promise.probe(host, {
-      timeout: 5,
-    });
-    return {
-      "success":true,
-      "ip":tmp.numeric_host,
-      "alive":tmp.alive,
-      "packetLoss":(tmp.packetLoss).toString()
-    };
-  } catch (error) {
-    return {
-      "success":false,
-      "data":error.message
-    };
-  }
 }
 
 /** Random

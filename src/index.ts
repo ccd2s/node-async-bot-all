@@ -44,13 +44,19 @@ interface ConfigV3Server {
   type: "mc" | "a2s" | null | undefined
 }
 
+// 测试中心服务器配置项
+interface CenterServerConfig {
+  id: string,
+  name: string
+}
+
 // 配置项类型定义
 export interface Config {
   cxV3: Array<ConfigCxV3>,
   rwAPI:string,
   timeout:number,
   baAPI:string[],
-  serverPing:Dict<string>,
+  slTest:CenterServerConfig[],
   steamAPI:string,
   memesAPI:Dict<string>,
   catAPI:string,
@@ -85,9 +91,6 @@ export const Config: Schema<Config> =
       baAPI: Schema.array(String).default(['https://rba.kanostar.top/portrait']).description('随机BA图 API')
     }).description('随机BA图'),
     Schema.object({
-      serverPing: Schema.dict(String).role('table').description('键：群号；值：Host')
-    }).description('服之测测（Ping）'),
-    Schema.object({
       steamAPI: Schema.string().default('https://api.tasaed.top/get/steamid/').description('转换 Steam ID API')
     }).description('转换 Steam ID'),
     Schema.object({
@@ -101,7 +104,13 @@ export const Config: Schema<Config> =
     }).description('获取 QQ 信息'),
     Schema.object({
       slNews: Schema.array(String).default(['']).description('{platform}:{channelId}')
-    }).description('SL新闻列表')
+    }).description('SL新闻列表'),
+    Schema.object({
+      slTest: Schema.array(Schema.object({
+        id: Schema.string().description('服务器 ID'),
+        name: Schema.string().description('服务器 名称')
+      })).default([{"id": "1", "name": "中心 鲁贝 1"}, {"id": "19", "name": "中心 斯特拉斯堡 1"}, {"id": "3", "name": "Steam 认证 API"}]).description('测试中心服务器')
+    }).description('测试中心服务器'),
   ]).description('基础设置');
 
 // 插件注册
@@ -124,7 +133,7 @@ export function apply(ctx: Context) {
     ]);
   });
   // sl 新闻 定时任务与指令
-  ctx.command("slnews", "手动触发slnews发送到当前会话")
+  ctx.command("slnews")
     .action(async () => {
       const outMsg = await command.getNewsMsg(ctx,1);
       if (outMsg.success) {
@@ -210,17 +219,11 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await command.getBlueArchive(ctx, <Session>session);
     });
-  ctx.command('serverTest')
-    .alias('服之测测')
+  ctx.command('centerServerTest')
+    .alias('测测中心服务器')
     .action(async ({ session }) => {
-      const server = await command.serverTest(ctx, <Session>session);
-      if (server['success']==0) {
-        return session?.text('.msg',server);
-      } else if (server['success']==1) {
-        return session?.text('.forbidden',server);
-      } else {
-        return session?.text('.failed',server);
-      }
+      const msg = await command.centerServerTest(ctx, <Session>session);
+      return session?.text(msg.success, msg.data);
     });
   ctx.command('meme [序号:posint]')
     .alias('memes')

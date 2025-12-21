@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
   "description": "NodeAsync Bot插件（自用）",
-  "version": "2.22.2",
+  "version": "2.23.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "contributors": [
@@ -40,7 +40,6 @@
   "dependencies": {
     "@bbob/html": "^4.3.1",
     "@bbob/preset-html5": "^4.3.1",
-    "ping": "^1.0.0",
     "steam-server-query": "^1.1.3"
   }
 }

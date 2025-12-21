@@ -89,10 +89,40 @@ interface NewsItem {
   author: string;
   contents: string;
   feedlabel: string;
-  date: number; // 时间戳(秒)
+  // 时间戳(秒)
+  date: number;
   feedname: string;
   feed_type: number;
   appid: number;
+}
+
+// Uptime Kuma API
+/** 单条心跳记录 */
+interface Heartbeat {
+  // 0 = down, 1 = up
+  status: 0 | 1;
+  // 时间字符串
+  time: string;
+  // 状态信息
+  msg: string;
+  // 延迟（ms），不可用时为 null
+  ping: number | null;
+}
+
+/** 心跳列表：key 为 Monitor ID（字符串），value 为心跳数组 */
+interface HeartbeatList {
+  [monitorId: string]: Heartbeat[];
+}
+
+/** 在线率列表：key 格式如 "1_24"（MonitorID_小时数），value 为百分比 */
+interface UptimeList {
+  [periodKey: string]: number;
+}
+
+/** 接口整体返回结构 */
+export interface MonitorStatusResponse {
+  heartbeatList: HeartbeatList;
+  uptimeList: UptimeList;
 }
 
 // 指令 cx
@@ -415,46 +445,70 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
 }
 
 /**
- * 指令 serverTest
- * @deprecated
+ * 指令 centerServerTest
  * */
-export async function serverTest(ctx: Context, session: Session):Promise<Object> {
+export async function centerServerTest(ctx: Context, session: Session):Promise<{ success: string, data: object }> {
   // 日志
-  const log = ctx.logger('serverTest');
+  const log = ctx.logger('centerServerTest');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
-  const host = ctx.config.serverPing[`${session.event.guild?.id}`];
-  if (host==undefined) {
-    return {
-      "success": 1,
-      "time": time
+  let msg: { success: string, data: object };
+  let list: string = "";
+  const timeFormatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  // 发送请求
+  const response = await fun.request<MonitorStatusResponse>("https://status.scpslgame.com/api/status-page/heartbeat/nw", {}, ctx.config.timeout, log);
+  if (response.success) {
+    for (const server of ctx.config.slTest) {
+      const lastTime = response.data.heartbeatList[server.id].at(-1);
+      if (lastTime) {
+        const uptime24 = (response.data.uptimeList[server.id+"_24"] * 100).toFixed(2) + '%';
+        const status = (lastTime?.status==1) ? "正常" : "故障"
+        const testTime = timeFormatter.format(new Date(lastTime?.time.replace(' ', 'T') + 'Z'))
+        list = list+"\n"+session.text(".list", {
+          "name": server.name,
+          "status": status,
+          "uptime": uptime24,
+          "time": testTime
+        });
+      } else {
+        list = list+"\n"+session.text(".listFailed", {
+          "name": server.name,
+          "data": "未能获取到此服务器的状态信息。"
+        });
+      }
+    }
+    msg = {
+      "data" : {"list" : list, "time" : time},
+      "success" : '.msg'
+    }
+    log.debug("Sent:");
+    log.debug(msg);
+  } else {
+    let err: string;
+    if (response.code) {
+      err = (response.isJson) ? response.error['data'] : response.error;
+    }
+    else {
+      err = response.error.message;
+    }
+    msg = {
+      "data" : {"data":err, "time" : time},
+      "success" : '.failed'
     };
+    log.warn("Sent:");
+    log.warn(msg);
   }
-  const tmp = await fun.hostPing(host);
-  log.info(tmp);
-  if (!tmp.success){
-    return {
-      "success": 2,
-      "time": time,
-      "data": tmp.data,
-    };
-  }
-  if (tmp.ip==undefined){
-    return {
-      "success": 2,
-      "time": time,
-      "data": "未知的主机 "+host,
-    };
-  }
-  return {
-    "success": 0,
-    "time": time,
-    "host": host,
-    "ip": tmp.ip,
-    "alive": (tmp.alive==true) ? "正常" : "异常",
-    "packetLoss": tmp.packetLoss
-  };
+  return msg;
 }
 
 // 指令 Meme
