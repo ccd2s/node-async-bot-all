@@ -1,3 +1,6 @@
+noApi: 未指定 API
+noop: 无
+unknownError: 未知错误。
 commands:
   cxgame:
     description: 查询服务器当前人数。
@@ -38,7 +41,6 @@ commands:
       timeout: 请求超时。
       fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
-      error: 执行错误。
       host: 没有到主机的路由。
   status:
     description: 查询机器人状态。
@@ -80,7 +82,6 @@ commands:
       msg: |-
         {time}
         {data}
-      error: 执行错误。
       failed: |-
         {time}
         获取失败（{data}）。
@@ -108,6 +109,9 @@ commands:
       failed: |-
         {time}
         查看失败：{data}
+      statusLive: ✅ 正常
+      statusDie: ❌ 故障
+      dataFail: 未能获取到此服务器的状态信息。
   meme:
     description: 群友的怪话！
     messages:
@@ -121,7 +125,6 @@ commands:
       forbidden: |-
         {quote}{time}
         此指令不允许在本群使用。
-      error: 执行错误。
   randomcat:
     description: 随机猫猫图。
     messages:

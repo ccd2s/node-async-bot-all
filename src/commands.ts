@@ -131,7 +131,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
       // 未指定查询 API
       msg = {
         "time": time,
-        "data": "未指定查询 服务器",
+        "data": session.text("noApi"),
         "success": 2
       };
       log.warn("Sent:");
@@ -158,7 +158,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
             "players": info.players,
             "version": info.version,
             "bots": info.bots,
-            "note": note ?? '无'
+            "note": note ?? session.text("noop")
           };
           log.info(`Server ${count}:`);
           log.info(temp);
@@ -167,9 +167,9 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           // 失败
           let err:string;
           if ((info.error).toString().includes("Timeout reached. Possible reasons: You are being rate limited; Timeout too short; Wrong server host configured")){
-            err = "请求超时。";
+            err = session.text(".timeout");
           } else {
-            err = "未知错误。";
+            err = session.text("unknown");
           }
           const temp = {
             "count": count,
@@ -192,7 +192,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "count": count,
               "players": serverInfo.data.players.online + "/" + serverInfo.data.players.max,
               "version": serverInfo.data.version.name,
-              "note": note ?? '无'
+              "note": note ?? session.text("noop")
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -207,7 +207,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "list": serverInfo.data.players.sample
                 .map(item => item.name)
                 .join(', '),
-              "note": note ?? '无'
+              "note": note ?? session.text("noop")
             };
             log.info(`Server ${count}:`);
             log.info(temp);
@@ -367,7 +367,7 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
     // 未指定 API
     msg = {
       "time": time,
-      "data": "未指定 API",
+      "data": session.text("noApi"),
       "success": 2
     };
     log.warn("Sent:");
@@ -413,7 +413,7 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   const time = fun.getHongKongTime();
   if (ctx.config.baAPI==undefined){
     // 未指定 API
-    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : "未指定 API"}));
+    await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : session.text("noApi")}));
     return 1;
   }
   // 发送等待消息
@@ -458,7 +458,7 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
       const lastTime = response.data.heartbeatList[server.id].at(-1);
       if (lastTime) {
         const uptime24 = (response.data.uptimeList[server.id+"_24"] * 100).toFixed(2) + '%';
-        const status = (lastTime?.status==1) ? "正常" : "故障"
+        const status = (lastTime?.status==1) ? session.text(".statusLive") : session.text(".statusDie")
         const testTime = timeFormatter.format(new Date(lastTime?.time.replace(' ', 'T') + 'Z'))
         list = list+"\n"+session.text(".list", {
           "name": server.name,
@@ -469,7 +469,7 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
       } else {
         list = list+"\n"+session.text(".listFailed", {
           "name": server.name,
-          "data": "未能获取到此服务器的状态信息。"
+          "data": session.text(".dataFail")
         });
       }
     }
