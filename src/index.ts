@@ -58,6 +58,7 @@ export interface Config {
   baAPI:string[],
   slTest:CenterServerConfig[],
   steamAPI:string,
+  newsAPI:string,
   memesAPI:Dict<string>,
   catAPI:string,
   qqAPI:string,
@@ -103,7 +104,8 @@ export const Config: Schema<Config> =
       qqAPI: Schema.string().default('https://uapis.cn/api/v1/social/qq/userinfo').description('获取 QQ 信息 API')
     }).description('获取 QQ 信息'),
     Schema.object({
-      slNews: Schema.array(String).default(['']).description('{platform}:{channelId}')
+      slNews: Schema.array(String).default(['']).description('{platform}:{channelId}'),
+      newsAPI: Schema.string().default('https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1').description('新闻 API')
     }).description('SL新闻列表'),
     Schema.object({
       slTest: Schema.array(Schema.object({

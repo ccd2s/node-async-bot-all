@@ -720,7 +720,7 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
   // logger
   const log = ctx.logger('getNewsMsg');
   // 请求 Steam API
-  const response = await fun.request<APINews>("http://127.0.0.1:8080/tasa/index.old/v.json", {}, ctx.config.timeout, log);
+  const response = await fun.request<APINews>(ctx.config.newsAPI, {}, ctx.config.timeout, log);
   if (response.success) {
     // 防止重复，如果主动调用就跳过检测
     if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid&&type!=1){
