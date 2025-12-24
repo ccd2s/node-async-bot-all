@@ -716,19 +716,28 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
 }
 
 // 定时任务 SL News
-export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boolean, data: string, msg?: string}> {
+export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boolean, data?: Buffer, msg: string}> {
   // logger
   const log = ctx.logger('getNewsMsg');
   // 请求 Steam API
-  const response = await fun.request<APINews>("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1", {}, ctx.config.timeout, log);
+  const response = await fun.request<APINews>("http://127.0.0.1:8080/tasa/index.old/v.json", {}, ctx.config.timeout, log);
   if (response.success) {
-    // 防止重复，主动调用跳过检测
+    // 防止重复，如果主动调用就跳过检测
     if((await ctx.database.get("botData", "newsId"))[0]?.data==response.data.appnews.newsitems[0].gid&&type!=1){
       log.debug("无新闻");
-      return {success: false, data: ""};
+      return {success: false, msg: "无可用新闻"};
     }
-    const html = await fun.readNewsFile(response.data, log);
-    if (html[1]) return {success: false, data: `渲染图片失败`};
+    const db = await ctx.database.get("botData", response.data.appnews.newsitems[0].gid);
+    let html:string[] = [];
+    if (db[0]){
+      html[0] = db[0].data;
+    } else {
+      html = await fun.readNewsFile(response.data, log)
+      if (html[1]) return {success: false, msg: `渲染图片失败`};
+      await ctx.database.upsert('botData',  [
+        { id: response.data.appnews.newsitems[0].gid, data: html[0] }
+      ]);
+    }
     const page = await ctx.puppeteer.page();
     try {
       await page.setViewport({
@@ -752,14 +761,14 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
       if(type==0) await ctx.database.upsert('botData',  [
         { id: "newsId", data: response.data.appnews.newsitems[0].gid }
       ]);
-      return {success: true, data: Buffer.from(image).toString('base64'), msg: "NorthWood 发布了一个新闻（原文+机翻）："+response.data.appnews.newsitems[0].title};
+      return {success: true, data: image, msg: "NorthWood 发布了一个新闻（原文+机翻）："+response.data.appnews.newsitems[0].title};
     } catch(err) {
       log.error('图片渲染失败:', err);
-      return {success: false, data: "图片渲染失败"};
+      return {success: false, msg: "图片渲染失败"};
     } finally {
       if (page && !page.isClosed()) await page.close()
     }
   } else {
-    return {success: false, data: "请求 Steam API 失败"};
+    return {success: false, msg: "请求 Steam API 失败"};
   }
 }

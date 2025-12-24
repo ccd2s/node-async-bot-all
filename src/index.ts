@@ -137,12 +137,11 @@ export function apply(ctx: Context) {
     .action(async () => {
       const log = ctx.logger("slnews");
       const outMsg = await command.getNewsMsg(ctx,1);
-      if (outMsg.success) {
-        return `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`;
+      if (outMsg.data) {
+        return `${outMsg.msg}\n${h.image(outMsg.data, 'image/png')}`;
       } else {
         log.warn(outMsg);
-        if (outMsg.data=="") return "无可用新闻";
-        return outMsg.data;
+        return outMsg.msg;
       }
     });
   // 每小时0分
@@ -158,13 +157,13 @@ export function apply(ctx: Context) {
   ctx.on("node-async/news", async () => {
     // 获取新闻
     const outMsg = await command.getNewsMsg(ctx,0);
-    if (outMsg.success) {
+    if (outMsg.data) {
       // 发现新的新闻！
-      await ctx.broadcast(ctx.config.slNews, `${outMsg.msg}\n${h('image', { url: `data:image/jpg;base64,${outMsg.data}` })}`);
+      await ctx.broadcast(ctx.config.slNews, `${outMsg.msg}\n${h.image(outMsg.data, 'image/png')}`);
     } else {
-      // 啥也没有或者失败
-      if (outMsg.data=="") return;
-      await ctx.broadcast(ctx.config.slNews, outMsg.data);
+      // 啥新的新闻没有或者 boom
+      if (outMsg.msg=="无可用新闻") return;
+      await ctx.broadcast(ctx.config.slNews, outMsg.msg);
     }
   });
   // 指令注册
