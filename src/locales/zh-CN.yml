@@ -42,6 +42,7 @@ commands:
       fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
       host: 没有到主机的路由。
+      dns: 解析失败。
   status:
     description: 查询机器人状态。
     messages:

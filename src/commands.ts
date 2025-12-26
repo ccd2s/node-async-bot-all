@@ -227,6 +227,8 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
             err = session.text('.fewData');
           } else if (err.includes("Expected server to send packet type")) {
             err = session.text('.fewData');
+          } else if (err.includes("getaddrinfo")) {
+            err = session.text('.dns');
           }
           const temp = {
             "count": count,
