@@ -3,7 +3,7 @@ import os from 'os';
 import fs from 'fs';
 import path from 'path';
 // koishi and plugin
-import { Context, FlatPick, Random, Time ,sleep } from "koishi";
+import { Context, FlatPick, Random, Time, sleep } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // node-async-bot-all types
 import { APINews, APIUserInfo } from "./commands.ts";
@@ -38,19 +38,21 @@ function getSystemName(): string {
 }
 
 // 获取内存使用率
-function getMemoryUsage(): number {
+function getMemoryUsage(): string {
   const totalMemory = os.totalmem();
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
-  return Math.round((usedMemory / totalMemory) * 10000) / 100;
+  const percentage = Math.round((usedMemory / totalMemory) * 10000) / 100;
+  const memory = `${(usedMemory / (1024 ** 3)).toFixed(2)}GB / ${(totalMemory / (1024 ** 3)).toFixed(2)}GB`;
+  return `${percentage}%（${memory}）`;
 }
 
 // 获取CPU使用率（异步函数）
-async function getCpuUsage(): Promise<number> {
+async function getCpuUsage(): Promise<string> {
   const cpus1 = os.cpus();
 
   // 等待 100ms 后再次采样
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await sleep(100);
 
   const cpus2 = os.cpus();
 
@@ -79,7 +81,7 @@ async function getCpuUsage(): Promise<number> {
 
   // 计算使用率百分比
   const usage = 100 - (100 * totalIdle / totalTick);
-  return Math.round(usage * 100) / 100; // 保留两位小数
+  return `${Math.round(usage * 100) / 100}%`;
 }
 
 /**
@@ -91,8 +93,8 @@ export async function getSystemUsage():Promise<{name: string,cpu: string,memory:
   try {
     return {
       "name": getSystemName(),
-      "cpu": await getCpuUsage()+"%",
-      "memory": getMemoryUsage()+"%",
+      "cpu": await getCpuUsage(),
+      "memory": getMemoryUsage(),
       "success": 0
     };
   } catch (error) {
