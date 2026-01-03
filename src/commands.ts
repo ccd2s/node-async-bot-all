@@ -152,6 +152,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         // a2s 服务器
         const info = await fun.queryA2S(api, log);
         if (info.success){
+          log.debug(info);
           // 成功
           const temp = {
             "count": count,
@@ -185,6 +186,7 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
         const host = api.split(":");
         const serverInfo = await fun.slpInfo(log, host[0], Number(host[1]), ctx.config.timeout);
         if (serverInfo.success) {
+          log.debug(serverInfo);
           // 成功
           if (serverInfo.data.players.sample==null) {
             // 无玩家
@@ -379,6 +381,7 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
   // 发送请求
   const response = await fun.request<APIRandomWord>(ctx.config.rwAPI+"?format=json", {}, ctx.config.timeout, log);
   if (response.success) {
+    log.debug(response.data);
     // 发送消息
     msg = {
       "time" : time,
@@ -422,7 +425,7 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   const ms = fun.random(0,0, 1500);
   const link: string = (fun.random(2,ctx.config.baAPI)) + `?cacheBuster=${fun.random(1,1,2147483647)}`;
-  log.info(`Link: ${link}`);
+  log.debug(`Link: ${link}`);
   // 等待防止阈值限制
   await sleep(ms);
   const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
@@ -456,6 +459,7 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
   // 发送请求
   const response = await fun.request<MonitorStatusResponse>("https://status.scpslgame.com/api/status-page/heartbeat/nw", {}, ctx.config.timeout, log);
   if (response.success) {
+    log.debug(response.data);
     for (const server of ctx.config.slTest) {
       const lastTime = response.data.heartbeatList[server.id].at(-1);
       if (lastTime) {
@@ -567,6 +571,7 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   if (ctx.config.catAPI==undefined){
     // 未指定 API
     await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : "未指定 API", "time": time}));
+    log.warn("未指定 API");
     return 1;
   }
   // 发送等待消息
@@ -607,12 +612,14 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
   if (ctx.config.qqAPI==undefined){
     // 未指定 API
     await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : "未指定 API", "time": time}));
+    log.warn("未指定 API");
     return 1;
   }
   // 发送请求
   const response = await fun.request<APIUserInfo>(ctx.config.qqAPI+`?qq=${qq}`, {}, ctx.config.timeout, log);
   if (response.success) {
     const fullHtml = await fun.readUserCardFile(response.data);
+    log.debug(fullHtml);
     const page = await ctx.puppeteer.page();
     try {
       await page.setViewport({
@@ -654,7 +661,7 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
 // 指令 消息转图
 export async function getMsg(ctx: Context, session: Session):Promise<number> {
   // logger
-  const log = ctx.logger('getQQInfo');
+  const log = ctx.logger('getMsg');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
@@ -667,12 +674,14 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
   // 禁止套娃！
   if (session.quote.user.id==session.event.selfId) {
     await session.send(session.text(".matroska", {"quote" : h.quote(session.messageId)}));
+    log.debug("套娃");
     return 1;
   }
   // 获取用户信息
   const user = await session.bot.getUser(session.quote.user.id, session.channelId);
   // 消息内容 支持图片
   const msg:string = session.quote.content as string;
+  log.debug(msg);
   // 如果获取失败
   if (!user.name || !user.avatar) {
     await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "获取用户信息失败。"}));
@@ -680,7 +689,14 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
     return 1;
   }
   const page = await ctx.puppeteer.page();
-  const html = await fun.readUserMsgFile(user.name, user.avatar, msg);
+  const html = await fun.readUserMsgFile(user.name, user.avatar, msg.replace(
+    /<at\s+(?:id=["']([^"']*)["']\s+name=["']([^"']*)["']|name=["']([^"']*)["']\s+id=["']([^"']*)["'])\s*\/?>/g,
+    (match, id1, name1, name2, id2) => {
+      const name = name1 || name2 || id1 || id2 || match;
+      return `@${name}`;
+    }
+  ));
+  log.debug(html);
   try {
     await page.setViewport({
       width: 450,
@@ -718,7 +734,7 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
 }
 
 // 定时任务 SL News
-export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boolean, data?: Buffer, msg: string}> {
+export async function getNewsMsg(ctx: Context, type: number):Promise<{success: boolean, data?: Buffer, msg: string}> {
   // logger
   const log = ctx.logger('getNewsMsg');
   // 请求 Steam API
@@ -740,6 +756,7 @@ export async function getNewsMsg(ctx: Context,type:number):Promise<{success: boo
         { id: response.data.appnews.newsitems[0].gid, data: html[0] }
       ]);
     }
+    log.debug(html);
     const page = await ctx.puppeteer.page();
     try {
       await page.setViewport({
