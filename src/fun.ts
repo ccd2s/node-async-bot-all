@@ -336,7 +336,7 @@ export async function readUserMsgFile(userName:string, userAvatar:string, msg:st
           return `@${name}`;
         }
       );
-    if (inversion) html.replace("//// ", "");
+    if (inversion) html = html.replace("//// ", "");
   } catch (error) {
     html = error.message;
   }

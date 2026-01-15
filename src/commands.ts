@@ -663,6 +663,7 @@ export async function getMsg(ctx: Context, session: Session, inversion: boolean 
   // logger
   const log = ctx.logger('getMsg');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
+  log.debug(`inversion: ${inversion}`);
   // 获取香港时区当前时间
   const time = fun.getHongKongTime();
   // 未引用时退出
