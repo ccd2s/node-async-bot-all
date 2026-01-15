@@ -319,7 +319,7 @@ export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
 }
 
 // 读取消息传图文件
-export async function readUserMsgFile(userName:string, userAvatar:string, msg:string): Promise<string> {
+export async function readUserMsgFile(userName:string, userAvatar:string, msg:string, inversion: boolean | undefined): Promise<string> {
   let html: string;
   try{
     const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userMsg.html";
@@ -328,7 +328,15 @@ export async function readUserMsgFile(userName:string, userAvatar:string, msg:st
     html = html.toString()
       .replace("{userData.avatarUrl}", userAvatar)
       .replace("{userData.username}", userName)
-      .replace("{userData.message}", msg);
+      .replace("{userData.message}", msg)
+      .replace(
+        /<at\s+(?:id=["']([^"']*)["']\s+name=["']([^"']*)["']|name=["']([^"']*)["']\s+id=["']([^"']*)["'])\s*\/?>/g,
+        (match, id1, name1, name2, id2) => {
+          const name = name1 || name2 || id1 || id2 || match;
+          return `@${name}`;
+        }
+      );
+    if (inversion) html.replace("//// ", "");
   } catch (error) {
     html = error.message;
   }

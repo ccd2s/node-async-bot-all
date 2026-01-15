@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
   "description": "NodeAsync Bot插件（自用）",
-  "version": "2.24.9",
+  "version": "2.24.10",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "contributors": [
@@ -28,7 +28,7 @@
     "url": "git+https://github.com/ccd2s/node-async-bot-all.git"
   },
   "devDependencies": {
-    "@koishijs/client": "^5.30.4"
+    "@koishijs/client": "^5.30.11"
   },
   "peerDependencies": {
     "@koishijs/plugin-database-sqlite": "^4.6.0",

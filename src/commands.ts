@@ -659,7 +659,7 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
 }
 
 // 指令 消息转图
-export async function getMsg(ctx: Context, session: Session):Promise<number> {
+export async function getMsg(ctx: Context, session: Session, inversion: boolean | undefined):Promise<number> {
   // logger
   const log = ctx.logger('getMsg');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
@@ -689,13 +689,7 @@ export async function getMsg(ctx: Context, session: Session):Promise<number> {
     return 1;
   }
   const page = await ctx.puppeteer.page();
-  const html = await fun.readUserMsgFile(user.name, user.avatar, msg.replace(
-    /<at\s+(?:id=["']([^"']*)["']\s+name=["']([^"']*)["']|name=["']([^"']*)["']\s+id=["']([^"']*)["'])\s*\/?>/g,
-    (match, id1, name1, name2, id2) => {
-      const name = name1 || name2 || id1 || id2 || match;
-      return `@${name}`;
-    }
-  ));
+  const html = await fun.readUserMsgFile(user.name, user.avatar, msg, inversion);
   log.debug(html);
   try {
     await page.setViewport({

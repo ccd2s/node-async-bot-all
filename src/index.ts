@@ -246,9 +246,10 @@ export function apply(ctx: Context) {
       await command.getQQInfo(ctx, session as Session, qq);
     });
   ctx.command('msg2img')
+    .option('inversion', '-i')
     .alias('消息转图')
     .alias('m')
-    .action(async ({ session }) => {
-      await command.getMsg(ctx, session as Session);
+    .action(async ({ session, options }) => {
+      await command.getMsg(ctx, session as Session, options?.inversion);
     });
 }
