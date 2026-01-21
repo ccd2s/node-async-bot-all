@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
   "description": "NodeAsync Bot插件（自用）",
-  "version": "2.24.11",
+  "version": "2.24.12",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "contributors": [
@@ -20,8 +20,7 @@
     "plugin"
   ],
   "koishi": {
-    "preview": true,
-    "hidden": true
+    "preview": true
   },
   "repository": {
     "type": "git",
