@@ -134,8 +134,10 @@ export function apply(ctx: Context) {
       { id: "version", data: version }
     ]);
   });
+  // 主命令
+  const na = ctx.command('na');
   // sl 新闻 定时任务与指令
-  ctx.command("slnews")
+  na.subcommand("slnews")
     .action(async () => {
       const log = ctx.logger("slnews");
       const outMsg = await command.getNewsMsg(ctx,1);
@@ -169,7 +171,7 @@ export function apply(ctx: Context) {
     }
   });
   // 指令注册
-  ctx.command('cxGame')
+  na.subcommand('cxGame')
     .action(async ({ session }) => {
       const cx = await command.getServer(ctx, session as Session);
       if (cx['success']==0) {
@@ -180,7 +182,7 @@ export function apply(ctx: Context) {
         return session?.text('.failed',cx);
       }
     });
-  ctx.command('status')
+  na.subcommand('status')
     .alias('stats')
     .alias('状态')
     .action(async ({ session }) => {
@@ -191,13 +193,13 @@ export function apply(ctx: Context) {
         return session?.text('.failed',status);
       }
     });
-  ctx.command('random [最小数:number] [最大数:number]')
+  na.subcommand('random [最小数:number] [最大数:number]')
     .alias('随机数')
     .action(async ({ session },min,max) => {
       const random = await command.getRandom(ctx,session as Session,min,max);
       return session?.text('.msg',random);
     });
-  ctx.command('info')
+  na.subcommand('info')
     .action(async ({ session }) => {
       const info = await command.getInfo(ctx,session as Session);
       if (info['success']==0){
@@ -207,7 +209,7 @@ export function apply(ctx: Context) {
         return session?.text('.failed',info);
       }
     });
-  ctx.command('rw')
+  na.subcommand('rw')
     .action(async ({ session }) => {
       const rw = await command.getRandomWord(ctx,session as Session);
       if (rw['success']==0){
@@ -217,35 +219,35 @@ export function apply(ctx: Context) {
         return session?.text('.failed',rw);
       }
     });
-  ctx.command('randomBA')
+  na.subcommand('randomBA')
     .alias('随机ba图')
     .action(async ({ session }) => {
       await command.getBlueArchive(ctx, session as Session);
     });
-  ctx.command('centerServerTest')
+  na.subcommand('centerServerTest')
     .alias('测测中心服务器')
     .action(async ({ session }) => {
       const msg = await command.centerServerTest(ctx, session as Session);
       return session?.text(msg.success, msg.data);
     });
-  ctx.command('meme [序号:posint]')
+  na.subcommand('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
       await command.getMeme(ctx, session as Session, count);
     });
-  ctx.command('randomCat')
+  na.subcommand('randomCat')
     .alias('随机猫猫图')
     .alias('随机猫猫')
     .action(async ({ session }) => {
       await command.getCat(ctx, session as Session);
     });
-  ctx.command('getQQInfo <QQ号:string>')
+  na.subcommand('getQQInfo <QQ号:string>')
     .alias('获取QQ信息')
     .action(async ({ session }, qq) => {
       if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
       await command.getQQInfo(ctx, session as Session, qq);
     });
-  ctx.command('msg2img')
+  na.subcommand('msg2img')
     .option('inversion', '-i')
     .alias('消息转图')
     .alias('m')

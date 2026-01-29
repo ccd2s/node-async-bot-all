@@ -2,6 +2,8 @@ noApi: 未指定 API
 noop: 无
 unknownError: 未知错误。
 commands:
+  na:
+    description: NodeAsync Bot
   cxgame:
     description: 查询服务器当前人数。
     messages:
@@ -115,6 +117,12 @@ commands:
       dataFail: 未能获取到此服务器的状态信息。
   meme:
     description: 群友的怪话！
+    usage: |-
+      不带参数时随机查看
+      带参数时为查看指定 meme
+    examples: |-
+      meme
+      meme 1145
     messages:
       msg: |-
         {quote}{time}
@@ -139,6 +147,9 @@ commands:
         获取失败：{data}
   getqqinfo:
     description: 获取 QQ 号的信息。
+    usage: |-
+      获取 QQ 号的信息。
+    examples: getqqinfo 10001
     messages:
       msg: |-
         {quote}{image}
@@ -148,6 +159,8 @@ commands:
       command: QQ 号不正确。
   msg2img:
     description: 引用一个消息并使用此指令，即可将消息转图。
+    usage: |-
+      引用一条消息，/m。（不要带@）
     messages:
       msg: |-
         {quote}{image}
