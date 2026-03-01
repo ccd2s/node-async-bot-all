@@ -254,4 +254,11 @@ export function apply(ctx: Context) {
     .action(async ({ session, options }) => {
       await command.getMsg(ctx, session as Session, options?.inversion);
     });
+  na.subcommand('use <user:user> [方法:string]')
+    .alias('u')
+    .action(async ({ session }, user, desc) => {
+      const qq = user?.split(':')?.[1];
+      if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
+      await command.getUse(ctx, session as Session, qq, desc);
+    });
 }

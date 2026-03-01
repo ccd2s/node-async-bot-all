@@ -172,3 +172,12 @@ commands:
         {quote}禁止套娃！
   slnews:
     description: 抓取 NorthWood 的 Steam 最新新闻。
+  use:
+    description: 使用 TA ！
+    usage: |-
+      use @用户
+    examples: use @用户
+    messages:
+      command: 请 @ 一个用户。
+      msg: |-
+        {at} {desc}了 {at2} ！
