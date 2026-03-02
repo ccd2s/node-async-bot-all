@@ -340,7 +340,7 @@ export async function readUserMsgFile(userName:string, userAvatar:string, msg:st
       )
       .replace("<at type=\"all\"/>", "@全体成员");
     if (inversion) html = html.replace("//// ", "");
-    if (replyUserName!=undefined) html = html.replace("/**/ ", "//// ");
+    if (replyUserName!=undefined) html = html.replace("/**/", "//// ");
   } catch (error) {
     html = error.message;
   }

@@ -9,11 +9,10 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: transparent;
-      padding: 20px; /* 给截图留一点边缘留白 */
-      //// transform: rotate(180deg); /* 顺时针旋转180° */
+      padding: 20px;
+      //// transform: rotate(180deg);
     }
 
-    /* 核心容器 */
     .message-card {
       display: flex;
       flex-direction: row;
@@ -22,26 +21,24 @@
       background: #ffffff;
       padding: 15px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border-radius: 8px; /* 给卡片加一点圆角更好看 */
+      border-radius: 8px;
     }
 
-    /* 头像样式 */
     .avatar {
       width: 50px;
       height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      flex-shrink: 0; /* 防止被长文本挤压变形 */
+      flex-shrink: 0;
       margin-right: 15px;
       border: 1px solid #eee;
     }
 
-    /* 消息气泡及内容容器 */
     .content {
       flex: 1;
       display: flex;
       flex-direction: column;
-      min-width: 0; /* 防止长文本撑破flex容器 */
+      min-width: 0;
     }
 
     .user-name {
@@ -51,10 +48,9 @@
       margin-bottom: 6px;
     }
 
-    /* ================= 新增：回复块样式 ================= */
     .reply-block {
       background: #f7f8fa;
-      border-left: 3px solid #b9bbbe; /* 引用线标记 */
+      border-left: 3px solid #b9bbbe;
       padding: 6px 10px;
       border-radius: 0 4px 4px 0;
       margin-bottom: 8px;
@@ -71,7 +67,6 @@
     .reply-text {
       font-size: 13px;
       color: #777;
-      /* 长文本截断：最多显示2行 */
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -79,7 +74,6 @@
       text-overflow: ellipsis;
       word-break: break-all;
     }
-    /* =================================================== */
 
     .text-bubble {
       font-size: 15px;
@@ -87,13 +81,13 @@
       color: #444;
       background: #f2f3f5;
       padding: 10px 14px;
-      border-radius: 0 12px 12px 12px; /* 类似聊天气泡的圆角 */
+      border-radius: 0 12px 12px 12px;
 
-      white-space: pre-wrap;       /* 保留换行符 */
-      word-wrap: break-word;       /* 长单词断行 */
+      white-space: pre-wrap;
+      word-wrap: break-word;
       overflow-wrap: break-word;
       word-break: break-all;
-      width: fit-content; /* 让气泡宽度适应内容 */
+      width: fit-content;
     }
   </style>
 </head>
