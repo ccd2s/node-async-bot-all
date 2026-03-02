@@ -790,10 +790,10 @@ export async function getNewsMsg(ctx: Context, type: number):Promise<{success: b
 }
 
 // 指令 获取 qq 信息
-export async function getUse(ctx: Context, session: Session, qq: string, desc: string):Promise<number> {
+export async function getUse(ctx: Context, session: Session, qq: string, desc: string | undefined):Promise<number> {
   // logger
   const log = ctx.logger('getUse');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  await session.send(session.text(".msg", {"at": h.at(session.event.user?.id), "at2": h.at(qq), "desc": h.text(desc.replace("<at type=\"all\"/>", "")) ?? "使用"}));
+  await session.send(session.text(".msg", {"at": h.at(session.event.user?.id), "at2": h.at(qq), "desc": desc ?? "使用"}));
   return 0;
 }
