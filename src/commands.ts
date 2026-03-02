@@ -682,6 +682,8 @@ export async function getMsg(ctx: Context, session: Session, inversion: boolean 
   const user = await session.bot.getUser(session.quote.user.id, session.channelId);
   // 消息内容 支持图片
   const msg:string = session.quote.content as string;
+  const quoteMsg:string | undefined = session.quote.quote?.content;
+  const quoteUser:string | undefined = session.quote.quote?.user?.name;
   log.debug(msg);
   // 如果获取失败
   if (!user.name || !user.avatar) {
@@ -690,7 +692,7 @@ export async function getMsg(ctx: Context, session: Session, inversion: boolean 
     return 1;
   }
   const page = await ctx.puppeteer.page();
-  const html = await fun.readUserMsgFile(user.name, user.avatar, msg, inversion);
+  const html = await fun.readUserMsgFile(user.name, user.avatar, msg, inversion, quoteUser, quoteMsg);
   log.debug(html);
   try {
     await page.setViewport({
@@ -792,6 +794,6 @@ export async function getUse(ctx: Context, session: Session, qq: string, desc: s
   // logger
   const log = ctx.logger('getUse');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  await session.send(session.text(".msg", {"at": h.at(session.event.user?.id), "at2": h.at(qq), "desc": desc ?? "使用"}));
+  await session.send(session.text(".msg", {"at": h.at(session.event.user?.id), "at2": h.at(qq), "desc": h.text(desc.replace("<at type=\"all\"/>", "")) ?? "使用"}));
   return 0;
 }
