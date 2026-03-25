@@ -627,7 +627,7 @@ export async function getQQInfo(ctx: Context, session: Session, qq: string):Prom
         height: 650,
         deviceScaleFactor: 2
       });
-      await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+      await page.setContent(fullHtml, { timeout: ctx.config.htmlTimeout, waitUntil: 'networkidle0' });
       const { width, height } = await page.evaluate(() => ({
         width: document.body.scrollWidth,
         height: document.body.scrollHeight
@@ -700,7 +700,7 @@ export async function getMsg(ctx: Context, session: Session, inversion: boolean 
       height: 1,
       deviceScaleFactor: 2
     });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { timeout: ctx.config.htmlTimeout, waitUntil: 'networkidle0' });
     const { width, height } = await page.evaluate(() => ({
       width: document.body.scrollWidth + 50,
       height: document.body.scrollHeight
@@ -761,7 +761,7 @@ export async function getNewsMsg(ctx: Context, type: number):Promise<{success: b
         height: 800,
         deviceScaleFactor: 2
       });
-      await page.setContent(html[0], { waitUntil: 'networkidle0' });
+      await page.setContent(html[0], { timeout: ctx.config.htmlTimeout, waitUntil: 'networkidle0' });
       const { width, height } = await page.evaluate(() => ({
         width: document.body.scrollWidth,
         height: document.body.scrollHeight

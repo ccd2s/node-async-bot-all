@@ -1,6 +1,5 @@
 // koishi and plugin
 import { Context, Dict, Schema, Session, h } from 'koishi';
-import { } from "koishi-plugin-cron";
 // node-async-bot-all
 import * as command from './commands.ts';
 import { version } from '../package.json';
@@ -19,6 +18,9 @@ declare module 'koishi' {
     // 方法名称对应自定义事件的名称
     // 方法签名对应事件的回调函数签名
     "node-async/news"(): void;
+  }
+  interface Context {
+    cron: (expression: string, callback: () => void) => void;
   }
 }
 
@@ -54,6 +56,7 @@ interface CenterServerConfig {
 export interface Config {
   cxV3: Array<ConfigCxV3>,
   rwAPI:string,
+  htmlTimeout:number,
   timeout:number,
   baAPI:string[],
   slTest:CenterServerConfig[],
@@ -69,7 +72,8 @@ export interface Config {
 export const Config: Schema<Config> =
   Schema.intersect([
     Schema.object({
-      timeout: Schema.number().default(8000).description('超时时间（毫秒）')
+      timeout: Schema.number().default(8000).description('超时时间（毫秒）'),
+      htmlTimeout: Schema.number().default(30000).description('HTML 超时时间（毫秒）')
     }).description('基础'),
     Schema.object({
       cxV3: Schema.array(
