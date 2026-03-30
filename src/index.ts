@@ -184,7 +184,7 @@ export function apply(ctx: Context) {
   ctx.on('message', async (session) => {
     for (const content of ctx.config.specialMsg) {
       if (session.content === content) {
-        await session.bot.createReaction(session.channelId as string, session.messageId as string, String(fun.random(2, ctx.config.reactionId)));
+        await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|${String(fun.random(2, ctx.config.reactionId))}`);
       }
     }
   });
