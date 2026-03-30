@@ -2,6 +2,7 @@
 import { Context, Dict, Schema, Session, h } from 'koishi';
 // node-async-bot-all
 import * as command from './commands.ts';
+import * as fun from './fun.ts';
 import { version } from '../package.json';
 
 // 在上下文中注入
@@ -65,7 +66,9 @@ export interface Config {
   memesAPI:Dict<string>,
   catAPI:string,
   qqAPI:string,
-  slNews:string[];
+  slNews:string[],
+  specialMsg:string[],
+  reactionId:number[];
 }
 
 /// 配置项
@@ -111,6 +114,10 @@ export const Config: Schema<Config> =
       slNews: Schema.array(String).default(['']).description('{platform}:{channelId}'),
       newsAPI: Schema.string().default('https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1').description('新闻 API')
     }).description('SL新闻列表'),
+    Schema.object({
+      specialMsg: Schema.array(String).default([]).description('特殊消息'),
+      reactionId: Schema.array(Number).default([]).description('回应表情 ID')
+    }).description('特殊消息回应'),
     Schema.object({
       slTest: Schema.array(Schema.object({
         id: Schema.string().description('服务器 ID'),
@@ -172,6 +179,13 @@ export function apply(ctx: Context) {
       // 啥新的新闻没有或者 boom
       if (outMsg.msg=="无可用新闻") return;
       await ctx.broadcast(ctx.config.slNews, outMsg.msg);
+    }
+  });
+  ctx.on('message', async (session) => {
+    for (const content of ctx.config.specialMsg) {
+      if (session.content === content) {
+        await session.bot.createReaction(session.channelId as string, session.messageId as string, String(fun.random(2, ctx.config.reactionId)));
+      }
     }
   });
   // 指令注册

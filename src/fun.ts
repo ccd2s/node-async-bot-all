@@ -197,14 +197,17 @@ export async function getMsgCount(ctx: Context): Promise<Object> {
  * @param data
  * @param data2
  */
-export function random(type:number = 0,data:any,data2?:any):number {
+export function random(type:number = 0, data:number | number[], data2?:number):number {
   const random = new Random(() => Math.random());
   switch (type) {
     case 0:
+      if (typeof data != "number" || data2 == undefined) return 0;
       return random.int(data, data2);
     case 1:
+      if (typeof data != "number" || data2 == undefined) return 0;
       return random.real(data, data2);
     case 2:
+      if (typeof data != "object") return 0;
       return random.pick(data);
     default:
       return 0;
