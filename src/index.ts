@@ -126,6 +126,14 @@ export const Config: Schema<Config> =
     }).description('测试中心服务器'),
   ]).description('基础设置');
 
+async function startReaction(session: Session) {
+  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|424`);
+}
+async function endReaction(session: Session) {
+  await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
+  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|144`);
+}
+
 // 插件注册
 export function apply(ctx: Context) {
   // 国际化
@@ -191,7 +199,9 @@ export function apply(ctx: Context) {
   // 指令注册
   na.subcommand('cxGame')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       const cx = await command.getServer(ctx, session as Session);
+      await endReaction(session as Session);
       if (cx['success']==0) {
         return session?.text('.msg',cx);
       } else if (cx['success']==1) {
@@ -204,7 +214,9 @@ export function apply(ctx: Context) {
     .alias('stats')
     .alias('状态')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       const status = await command.getStatus(ctx, session as Session);
+      await endReaction(session as Session);
       if (status['success']==0) {
         return session?.text('.msg',status);
       } else {
@@ -214,12 +226,16 @@ export function apply(ctx: Context) {
   na.subcommand('random [最小数:number] [最大数:number]')
     .alias('随机数')
     .action(async ({ session },min,max) => {
+      await startReaction(session as Session);
       const random = await command.getRandom(ctx,session as Session,min,max);
+      await endReaction(session as Session);
       return session?.text('.msg',random);
     });
   na.subcommand('info')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       const info = await command.getInfo(ctx,session as Session);
+      await endReaction(session as Session);
       if (info['success']==0){
         return session?.text('.msg',info);
       }
@@ -229,7 +245,9 @@ export function apply(ctx: Context) {
     });
   na.subcommand('rw')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       const rw = await command.getRandomWord(ctx,session as Session);
+      await endReaction(session as Session);
       if (rw['success']==0){
         return session?.text('.msg',rw);
       }
@@ -240,43 +258,57 @@ export function apply(ctx: Context) {
   na.subcommand('randomBA')
     .alias('随机ba图')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       await command.getBlueArchive(ctx, session as Session);
+      await endReaction(session as Session);
     });
   na.subcommand('centerServerTest')
     .alias('测测中心服务器')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       const msg = await command.centerServerTest(ctx, session as Session);
+      await endReaction(session as Session);
       return session?.text(msg.success, msg.data);
     });
   na.subcommand('meme [序号:posint]')
     .alias('memes')
     .action(async ({ session },count) => {
+      await startReaction(session as Session);
       await command.getMeme(ctx, session as Session, count);
+      await endReaction(session as Session);
     });
   na.subcommand('randomCat')
     .alias('随机猫猫图')
     .alias('随机猫猫')
     .action(async ({ session }) => {
+      await startReaction(session as Session);
       await command.getCat(ctx, session as Session);
+      await endReaction(session as Session);
     });
   na.subcommand('getQQInfo <QQ号:string>')
     .alias('获取QQ信息')
     .action(async ({ session }, qq) => {
       if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
+      await startReaction(session as Session);
       await command.getQQInfo(ctx, session as Session, qq);
+      await endReaction(session as Session);
     });
   na.subcommand('msg2img')
     .option('inversion', '-i')
     .alias('消息转图')
     .alias('m')
     .action(async ({ session, options }) => {
+      await startReaction(session as Session);
       await command.getMsg(ctx, session as Session, options?.inversion);
+      await endReaction(session as Session);
     });
   na.subcommand('use <user:user> [方法:string]')
     .alias('u')
     .action(async ({ session }, user, desc) => {
       const qq = user?.split(':')?.[1];
       if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
+      await startReaction(session as Session);
       await command.getUse(ctx, session as Session, qq, desc);
+      await endReaction(session as Session);
     });
 }

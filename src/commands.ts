@@ -421,8 +421,6 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
     await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : session.text("noApi")}));
     return 1;
   }
-  // 发送等待消息
-  const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   const ms = fun.random(0,0, 1500);
   const link: string = (fun.random(2,ctx.config.baAPI)) + `?cacheBuster=${fun.random(1,1,2147483647)}`;
   log.debug(`Link: ${link}`);
@@ -430,8 +428,6 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   await sleep(ms);
   const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
   if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(link)}));
-  // 撤回消息
-  await session.bot.deleteMessage(session.event.guild?.id as string, vid[0]);
   return 0;
 }
 
@@ -574,8 +570,6 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
     log.warn("未指定 API");
     return 1;
   }
-  // 发送等待消息
-  const vid = await session.send(session.text(".wait", {"quote" : h.quote(session.messageId), "time": time}));
   // 发送请求
   const response = await fun.request<APICat>(ctx.config.catAPI, {}, ctx.config.timeout, log);
   if (response.success) {
@@ -597,8 +591,6 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
       log.warn(response.error);
     }
   }
-  // 撤回消息
-  await session.bot.deleteMessage(session.event.guild?.id as string, vid[0]);
   return 0;
 }
 
