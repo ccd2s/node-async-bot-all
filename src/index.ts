@@ -129,9 +129,15 @@ export const Config: Schema<Config> =
 async function startReaction(session: Session) {
   await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|424`);
 }
+
 async function endReaction(session: Session) {
   await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
   await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|144`);
+}
+
+async function endReactionFailed(session: Session) {
+  await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
+  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|41`);
 }
 
 // 插件注册
@@ -201,13 +207,15 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const cx = await command.getServer(ctx, session as Session);
-      await endReaction(session as Session);
       if (cx['success']==0) {
-        return session?.text('.msg',cx);
+        session?.send(session?.text('.msg',cx));
+        await endReaction(session as Session);
       } else if (cx['success']==1) {
-        return session?.text('.forbidden',cx);
+        session?.send(session?.text('.forbidden',cx));
+        await endReactionFailed(session as Session);
       } else if (cx['success']==2) {
-        return session?.text('.failed',cx);
+        session?.send(session?.text('.failed',cx));
+        await endReactionFailed(session as Session);
       }
     });
   na.subcommand('status')
@@ -216,11 +224,12 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const status = await command.getStatus(ctx, session as Session);
-      await endReaction(session as Session);
       if (status['success']==0) {
-        return session?.text('.msg',status);
+        session?.send(session?.text('.msg',status));
+        await endReaction(session as Session);
       } else {
-        return session?.text('.failed',status);
+        session?.send(session?.text('.failed',status));
+        await endReactionFailed(session as Session);
       }
     });
   na.subcommand('random [最小数:number] [最大数:number]')
@@ -228,31 +237,33 @@ export function apply(ctx: Context) {
     .action(async ({ session },min,max) => {
       await startReaction(session as Session);
       const random = await command.getRandom(ctx,session as Session,min,max);
+      session?.send(session?.text('.msg',random));
       await endReaction(session as Session);
-      return session?.text('.msg',random);
     });
   na.subcommand('info')
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const info = await command.getInfo(ctx,session as Session);
-      await endReaction(session as Session);
       if (info['success']==0){
-        return session?.text('.msg',info);
+        session?.send(session?.text('.msg',info));
+        await endReaction(session as Session);
       }
       else{
-        return session?.text('.failed',info);
+        session?.send(session?.text('.failed',info));
+        await endReactionFailed(session as Session);
       }
     });
   na.subcommand('rw')
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const rw = await command.getRandomWord(ctx,session as Session);
-      await endReaction(session as Session);
       if (rw['success']==0){
-        return session?.text('.msg',rw);
+        session?.send(session?.text('.msg',rw));
+        await endReaction(session as Session);
       }
       else{
-        return session?.text('.failed',rw);
+        session?.send(session?.text('.failed',rw));
+        await endReactionFailed(session as Session);
       }
     });
   na.subcommand('randomBA')
@@ -267,8 +278,8 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const msg = await command.centerServerTest(ctx, session as Session);
+      session?.send(session?.text(msg.success, msg.data));
       await endReaction(session as Session);
-      return session?.text(msg.success, msg.data);
     });
   na.subcommand('meme [序号:posint]')
     .alias('memes')
@@ -288,8 +299,11 @@ export function apply(ctx: Context) {
   na.subcommand('getQQInfo <QQ号:string>')
     .alias('获取QQ信息')
     .action(async ({ session }, qq) => {
-      if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
       await startReaction(session as Session);
+      if (qq==undefined || isNaN(Number(qq))) {
+        await endReactionFailed(session as Session);
+        return session?.text('.command');
+      }
       await command.getQQInfo(ctx, session as Session, qq);
       await endReaction(session as Session);
     });
@@ -305,9 +319,12 @@ export function apply(ctx: Context) {
   na.subcommand('use <user:user> [方法:string]')
     .alias('u')
     .action(async ({ session }, user, desc) => {
-      const qq = user?.split(':')?.[1];
-      if (qq==undefined || isNaN(Number(qq))) return session?.text('.command') ;
       await startReaction(session as Session);
+      const qq = user?.split(':')?.[1];
+      if (qq==undefined || isNaN(Number(qq))) {
+        await endReactionFailed(session as Session);
+        return session?.text('.command');
+      }
       await command.getUse(ctx, session as Session, qq, desc);
       await endReaction(session as Session);
     });
