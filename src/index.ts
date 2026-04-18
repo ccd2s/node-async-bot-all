@@ -208,13 +208,13 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const cx = await command.getServer(ctx, session as Session);
       if (cx['success']==0) {
-        session?.send(session?.text('.msg',cx));
+        await session?.send(session?.text('.msg',cx));
         await endReaction(session as Session);
       } else if (cx['success']==1) {
-        session?.send(session?.text('.forbidden',cx));
+        await session?.send(session?.text('.forbidden',cx));
         await endReactionFailed(session as Session);
       } else if (cx['success']==2) {
-        session?.send(session?.text('.failed',cx));
+        await session?.send(session?.text('.failed',cx));
         await endReactionFailed(session as Session);
       }
     });
@@ -225,10 +225,10 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const status = await command.getStatus(ctx, session as Session);
       if (status['success']==0) {
-        session?.send(session?.text('.msg',status));
+        await session?.send(session?.text('.msg',status));
         await endReaction(session as Session);
       } else {
-        session?.send(session?.text('.failed',status));
+        await session?.send(session?.text('.failed',status));
         await endReactionFailed(session as Session);
       }
     });
@@ -237,7 +237,7 @@ export function apply(ctx: Context) {
     .action(async ({ session },min,max) => {
       await startReaction(session as Session);
       const random = await command.getRandom(ctx,session as Session,min,max);
-      session?.send(session?.text('.msg',random));
+      await session?.send(session?.text('.msg',random));
       await endReaction(session as Session);
     });
   na.subcommand('info')
@@ -245,11 +245,11 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const info = await command.getInfo(ctx,session as Session);
       if (info['success']==0){
-        session?.send(session?.text('.msg',info));
+        await session?.send(session?.text('.msg',info));
         await endReaction(session as Session);
       }
       else{
-        session?.send(session?.text('.failed',info));
+        await session?.send(session?.text('.failed',info));
         await endReactionFailed(session as Session);
       }
     });
@@ -258,11 +258,11 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const rw = await command.getRandomWord(ctx,session as Session);
       if (rw['success']==0){
-        session?.send(session?.text('.msg',rw));
+        await session?.send(session?.text('.msg',rw));
         await endReaction(session as Session);
       }
       else{
-        session?.send(session?.text('.failed',rw));
+        await session?.send(session?.text('.failed',rw));
         await endReactionFailed(session as Session);
       }
     });
@@ -278,7 +278,7 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const msg = await command.centerServerTest(ctx, session as Session);
-      session?.send(session?.text(msg.success, msg.data));
+      await session?.send(session?.text(msg.success, msg.data));
       await endReaction(session as Session);
     });
   na.subcommand('meme [序号:posint]')
