@@ -127,17 +127,17 @@ export const Config: Schema<Config> =
   ]).description('基础设置');
 
 async function startReaction(session: Session) {
-  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|424`);
+  if (session.bot.createReaction) await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|424`);
 }
 
 async function endReaction(session: Session) {
-  await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
-  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|144`);
+  if (session.bot.deleteReaction) await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
+  if (session.bot.createReaction) await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|144`);
 }
 
 async function endReactionFailed(session: Session) {
-  await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
-  await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|41`);
+  if (session.bot.deleteReaction) await session.bot.deleteReaction(session.channelId as string, session.messageId as string, `face|424`);
+  if (session.bot.createReaction) await session.bot.createReaction(session.channelId as string, session.messageId as string, `face|38`);
 }
 
 // 插件注册
@@ -207,14 +207,9 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await startReaction(session as Session);
       const cx = await command.getServer(ctx, session as Session);
-      if (cx['success']==0) {
-        await session?.send(session?.text('.msg',cx));
+      if (cx==0) {
         await endReaction(session as Session);
-      } else if (cx['success']==1) {
-        await session?.send(session?.text('.forbidden',cx));
-        await endReactionFailed(session as Session);
-      } else if (cx['success']==2) {
-        await session?.send(session?.text('.failed',cx));
+      } else {
         await endReactionFailed(session as Session);
       }
     });
@@ -225,10 +220,14 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const status = await command.getStatus(ctx, session as Session);
       if (status['success']==0) {
-        await session?.send(session?.text('.msg',status));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('.msg-md', status)
+        }) : session?.text('.msg', status));
         await endReaction(session as Session);
       } else {
-        await session?.send(session?.text('.failed',status));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('failed-md', status)
+        }) : session?.text('failed', status));
         await endReactionFailed(session as Session);
       }
     });
@@ -237,7 +236,9 @@ export function apply(ctx: Context) {
     .action(async ({ session },min,max) => {
       await startReaction(session as Session);
       const random = await command.getRandom(ctx,session as Session,min,max);
-      await session?.send(session?.text('.msg',random));
+      await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+        content: session?.text('.msg-md', random)
+      }) : session?.text('.msg', random));
       await endReaction(session as Session);
     });
   na.subcommand('info')
@@ -245,11 +246,15 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const info = await command.getInfo(ctx,session as Session);
       if (info['success']==0){
-        await session?.send(session?.text('.msg',info));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('.msg-md', info)
+        }) : session?.text('.msg', info));
         await endReaction(session as Session);
       }
       else{
-        await session?.send(session?.text('.failed',info));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('failed-md', info)
+        }) : session?.text('failed', info));
         await endReactionFailed(session as Session);
       }
     });
@@ -258,11 +263,15 @@ export function apply(ctx: Context) {
       await startReaction(session as Session);
       const rw = await command.getRandomWord(ctx,session as Session);
       if (rw['success']==0){
-        await session?.send(session?.text('.msg',rw));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('failed-md', rw)
+        }) : session?.text('failed', rw));
         await endReaction(session as Session);
       }
       else{
-        await session?.send(session?.text('.failed',rw));
+        await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+          content: session?.text('failed-md', rw)
+        }) : session?.text('failed', rw));
         await endReactionFailed(session as Session);
       }
     });
@@ -277,9 +286,12 @@ export function apply(ctx: Context) {
     .alias('测测中心服务器')
     .action(async ({ session }) => {
       await startReaction(session as Session);
-      const msg = await command.centerServerTest(ctx, session as Session);
-      await session?.send(session?.text(msg.success, msg.data));
-      await endReaction(session as Session);
+      const ct = await command.centerServerTest(ctx, session as Session);
+      if (ct==0) {
+        await endReaction(session as Session);
+      } else {
+        await endReactionFailed(session as Session);
+      }
     });
   na.subcommand('meme [序号:posint]')
     .alias('memes')

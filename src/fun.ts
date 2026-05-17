@@ -138,25 +138,17 @@ export function getHongKongTime(): string {
 }
 
 // 读取信息文件
-export async function readInfoFile(ctx: Context): Promise<string> {
-  let info: string;
-  try{
-    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"info.txt";
-    info = await fs.promises.readFile(aPath, 'utf8');
-    // 获取依赖版本
+export async function readInfo(ctx: Context): Promise<{ version: string, koishiVersion: string, nodeVersion: string } | string> {
+  try {
     const deps = await ctx.installer.getDeps();
-    // 替换
-    info = info.toString()
-      .replace(
-        "&version;",
-        (await ctx.database.get("botData", "version"))[0].data
-      )
-      .replace("&kVersion;",deps.koishi.resolved as string) // koishi 版本
-      .replace("&nVersion;",process.versions.node);
+    return {
+      version: (await ctx.database.get("botData", "version"))[0].data,
+      koishiVersion: deps.koishi.resolved as string,
+      nodeVersion: process.versions.node,
+    }
   } catch (error) {
-    info = error.message;
+    return error?.message ?? "Unknown error";
   }
-  return info;
 }
 
 // 计算时间戳差值

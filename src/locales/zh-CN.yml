@@ -1,6 +1,15 @@
 noApi: 未指定 API
 noop: 无
 unknownError: 未知错误。
+failed: |-
+  {quote}{time}
+  {error}
+failed-md: |-
+  **{time}**
+
+  ---
+
+  {error}
 commands:
   na:
     description: NodeAsync Bot
@@ -10,36 +19,37 @@ commands:
       msg: |-
         {time}{list}
         进服指南请在群公告中查看。
+      msg-md: |-
+        *{time}*
+
+        ---
+        {list}
+
+        ---
+
+        进服指南请在群公告中查看。
       list: |-
-        【MC 服务器 {count}】
+        【{name} 服务器 {count}】
         ➣ {version}：{players}
-        ➣ 玩家列表：{list}
+        ➣ {ne}：{list}
         ➣ 备注：{note}
-      listNoPlayer: |-
-        【MC 服务器 {count}】
-        ➣ {version}：{players}
-        ➣ 备注：{note}
+      list-md: |-
+        ## {name} 服务器 {count}
+
+        - {version}：{players}
+        - {ne}：{list}
+        - 备注：{note}
       listFailed: |-
-        【MC 服务器 {count}】
+        【{name} 服务器 {count}】
         ➣ 查询失败：{data}
         ➣ 请稍后重试。
         ➣ 备注：{note}
-      listA2S: |-
-        【A2S 服务器 {count}】
-        ➣ {version}：{players}
-        ➣ 机器人：{bots}
-        ➣ 备注：{note}
-      listFailedA2S: |-
-        【A2S 服务器 {count}】
-        ➣ 查询失败：{data}
-        ➣ 请稍后重试。
-        ➣ 备注：{note}
-      forbidden: |-
-        {time}
-        此指令不允许在本群使用。
-      failed: |-
-        {time}
-        查询失败：{data}
+      listFailed-md: |-
+        ## {name} 服务器 {count}
+
+        - 查询失败：{data}
+        - 请稍后重试。
+        - 备注：{note}
       timeout: 请求超时。
       fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
@@ -58,9 +68,22 @@ commands:
         昨日收/发消息数量：{msgCount}
         机器人版本：{version}
         运行时间：{online}
-      failed: |-
-        {time}
-        状态获取失败。
+      msg-md: |-
+        *{time}*
+
+        ---
+
+        ## 系统状态
+
+        - 系统名称：{name}
+        - CPU使用率：{cpu}
+        - 内存使用率：{memory}
+
+        ## 机器人状态
+
+        - 昨日收/发消息数量：{msgCount}
+        - 机器人版本：{version}
+        - 运行时间：{online}
   random:
     description: 随机数生成器。
     usage: |-
@@ -70,24 +93,49 @@ commands:
     messages:
       msg: |-
         {time}
-        生成的随机数：{data}
+        生成了一个随机数：{data}
+      msg-md: |-
+        *{time}*
+
+        ---
+
+        生成了一个随机数：{data}
   info:
     description: 查询机器人信息。
     messages:
       msg: |-
-        {data}
-      failed: |-
         {time}
-        读取信息失败。
+        --- NodeAsync {version} ---
+        私有机器人，服务器专用。
+        --- 开发者 ---
+        德二吹风机（3112836258）
+        --- 其他 ---
+        Node.js 版本：{nodeVersion}
+        Koishi 版本：{koishiVersion}
+        开源地址：https://github.com/ccd2s/node-async-bot-all
+        官网：https://www.tasaed.top
+      msg-md: |-
+        *{time}*
+
+        ---
+
+        ## NodeAsync {version}
+
+        私有机器人，服务器专用。
+
+        ## 开发者
+
+        - 德二吹风机（3112836258）
+
+        ## 其他
+
+        - Node.js 版本：{nodeVersion}
+        - Koishi 版本：{koishiVersion}
+        - 开源地址：https://github.com/ccd2s/node-async-bot-all
+        - 官网：https://www.tasaed.top
   rw:
     description: 随机名言名句。
     messages:
-      msg: |-
-        {time}
-        {data}
-      failed: |-
-        {time}
-        获取失败（{data}）。
   randomba:
     description: 随机BA图。
     messages:
@@ -98,16 +146,28 @@ commands:
     messages:
       msg: |-
         {time}{list}
+      msg-md: |-
+        *{time}*
+
+        ---
+        {list}
       list: |-
         == {name} ==
         状态：{status}
         存活率：{uptime}
         检测时间：{time}
+      list-md: |-
+        ## {name}
+
+        - 状态：{status}
+        - 存活率：{uptime}
+        - 检测时间：{time}
       listFailed: |-
         == {name} ==
         查看失败：{data}
-      failed: |-
-        {time}
+      listFailed-md: |-
+        ## {name}
+
         查看失败：{data}
       statusLive: ✅ 正常
       statusDie: ❌ 故障
@@ -125,20 +185,15 @@ commands:
         {quote}{time}
         {image}
         {title}
-      failed: |-
-        {quote}{time}
-        获取失败：{data}
-      forbidden: |-
-        {quote}{time}
-        此指令不允许在本群使用。
+      msg-qq: |-
+        {quote}{image}
+        {time}
+        {title}
   randomcat:
     description: 随机猫猫图。
     messages:
       msg: |-
         {quote}{image}
-      failed: |-
-        {quote}{time}
-        获取失败：{data}
   getqqinfo:
     description: 获取 QQ 号的信息。
     usage: |-

@@ -116,7 +116,7 @@ export interface MonitorStatusResponse {
 }
 
 // 指令 cx
-export async function getServer(ctx: Context, session: Session):Promise<Object> {
+export async function getServer(ctx: Context, session: Session):Promise<number> {
   // logger
   const log = ctx.logger('cx');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
@@ -131,12 +131,15 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
       // 未指定查询 API
       msg = {
         "time": time,
-        "data": session.text("noApi"),
+        "error": "查询失败："+session.text("noApi"),
         "success": 2
       };
       log.warn("Sent:");
       log.warn(msg);
-      return msg;
+      await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+        content: session?.text('failed-md', msg)
+      }) : session?.text('failed', msg));
+      return 1;
     }
     // 设立必要变量
     let count = 0;
@@ -158,12 +161,14 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
             "count": count,
             "players": info.players,
             "version": info.version,
-            "bots": info.bots,
-            "note": note ?? session.text("noop")
+            "list": info.bots,
+            "note": note ?? session.text("noop"),
+            "name": "A2S",
+            "ne": "机器人"
           };
           log.info(`Server ${count}:`);
           log.info(temp);
-          list = list+"\n"+session.text('.listA2S',temp);
+          list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? '.list-md' : '.list',temp);
         } else {
           // 失败
           let err:string;
@@ -175,11 +180,12 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           const temp = {
             "count": count,
             "data": err,
-            "note": note
+            "note": note,
+            "name": "A2S"
           };
           log.error(`Server ${count}:`);
           log.error(temp);
-          list = list+"\n"+session.text('.listFailedA2S',temp);
+          list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? '.listFailed-md' : '.listFailed',temp);
         }
       } else {
         // 默认 mc 服务器，请求
@@ -194,11 +200,14 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "count": count,
               "players": serverInfo.data.players.online + "/" + serverInfo.data.players.max,
               "version": serverInfo.data.version.name,
-              "note": note ?? session.text("noop")
+              "note": note ?? session.text("noop"),
+              "ne": "玩家列表",
+              "list": "[]",
+              "name": "MC"
             };
             log.info(`Server ${count}:`);
             log.info(temp);
-            list = list+"\n"+session.text('.listNoPlayer',temp);
+            list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? '.list-md' : '.list',temp);
           }
           else {
             // 有玩家
@@ -209,11 +218,13 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
               "list": serverInfo.data.players.sample
                 .map(item => item.name)
                 .join(', '),
-              "note": note ?? session.text("noop")
+              "note": note ?? session.text("noop"),
+              "ne": "玩家列表",
+              "name": "MC"
             };
             log.info(`Server ${count}:`);
             log.info(temp);
-            list = list+"\n"+session.text('.list',temp);
+            list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? '.list-md' : '.list',temp);
           }
         } else {
           // 失败
@@ -235,11 +246,12 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
           const temp = {
             "count": count,
             "data": err,
-            "note": note
+            "note": note,
+            "name": "MC"
           };
           log.error(`Server ${count}:`);
           log.error(temp);
-          list = list+"\n"+session.text('.listFailed',temp);
+          list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? '.listFailed-md' : '.listFailed',temp);
         }
       }
     }
@@ -248,17 +260,25 @@ export async function getServer(ctx: Context, session: Session):Promise<Object> 
       "list": list,
       "success": 0
     };
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('.msg-md', msg)
+    }) : session?.text('.msg', msg));
+    return 0;
   }
   else {
     // 群聊不在白名单中，发送消息
     msg = {
       "time": time,
+      "error": "此指令不允许在本群使用。",
       "success": 1
     };
     log.info("Sent:");
     log.info(msg);
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('failed-md', msg)
+    }) : session?.text('failed', msg));
+    return 1;
   }
-  return msg;
 }
 
 // 指令 Status
@@ -276,6 +296,8 @@ export async function getStatus(ctx: Context, session: Session):Promise<Object> 
     msg = {
       "time" : time,
       "data" : vMsg["data"],
+      "error" : "状态获取失败。",
+      "quote" : h.quote(session.messageId),
       "success" : 1
     };
   } else {
@@ -336,20 +358,21 @@ export async function getInfo(ctx: Context, session: Session):Promise<Object> {
   // 设立必要变量
   const time = fun.getHongKongTime();
   let msg: object;
-  let data = await fun.readInfoFile(ctx);
+  let data = await fun.readInfo(ctx);
   // 判断是否读取成功
-  if (!data.includes("&time;")){
-    log.error("Error: "+data);
+  if (typeof data == "string"){
+    log.error("Error:", data);
     msg = {
       "time" : time,
       "data" : data,
+      "error" : "读取信息失败。",
+      "quote" : h.quote(session.messageId),
       "success" : 1
     };
   } else {
-    data = data.replace("&time;",time);
     msg = {
       "time" : time,
-      "data" : data,
+      ...data,
       "success" : 0
     };
   }
@@ -371,7 +394,8 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
     // 未指定 API
     msg = {
       "time": time,
-      "data": session.text("noApi"),
+      "error": session.text("noApi"),
+      "quote" : h.quote(session.messageId),
       "success": 2
     };
     log.warn("Sent:");
@@ -385,7 +409,8 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
     // 发送消息
     msg = {
       "time" : time,
-      "data" : response.data.data,
+      "error" : response.data.data,
+      "quote" : h.quote(session.messageId),
       "success" : 0
     };
     log.debug("Sent:");
@@ -400,7 +425,8 @@ export async function getRandomWord(ctx: Context, session: Session):Promise<Obje
     }
     msg = {
       "time" : time,
-      "data" : err,
+      "error" : err,
+      "quote" : h.quote(session.messageId),
       "success" : 1
     };
     log.warn("Sent:");
@@ -414,8 +440,6 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
   // 日志
   const log = ctx.logger('ba');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  // 获取香港时区当前时间
-  const time = fun.getHongKongTime();
   if (ctx.config.baAPI==undefined){
     // 未指定 API
     await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : session.text("noApi")}));
@@ -434,7 +458,7 @@ export async function getBlueArchive(ctx: Context, session: Session):Promise<Num
 /**
  * 指令 centerServerTest
  * */
-export async function centerServerTest(ctx: Context, session: Session):Promise<{ success: string, data: object }> {
+export async function centerServerTest(ctx: Context, session: Session):Promise<number> {
   // 日志
   const log = ctx.logger('centerServerTest');
   log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
@@ -462,14 +486,14 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
         const uptime24 = (response.data.uptimeList[server.id+"_24"] * 100).toFixed(2) + '%';
         const status = (lastTime?.status==1) ? session.text(".statusLive") : session.text(".statusDie")
         const testTime = timeFormatter.format(new Date(lastTime?.time.replace(' ', 'T') + 'Z'))
-        list = list+"\n"+session.text(".list", {
+        list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? ".list-md" :".list", {
           "name": server.name,
           "status": status,
           "uptime": uptime24,
           "time": testTime
         });
       } else {
-        list = list+"\n"+session.text(".listFailed", {
+        list = list+"\n"+session.text(session?.bot.adapterName == "qq" ? ".listFailed-md" : ".listFailed", {
           "name": server.name,
           "data": session.text(".dataFail")
         });
@@ -479,8 +503,12 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
       "data" : {"list" : list, "time" : time},
       "success" : '.msg'
     }
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('.msg-md', msg.data)
+    }) : session?.text('.msg', msg.data));
     log.debug("Sent:");
     log.debug(msg);
+    return 0;
   } else {
     let err: string;
     if (response.code) {
@@ -490,13 +518,16 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<{
       err = response.error.message;
     }
     msg = {
-      "data" : {"data":err, "time" : time},
+      "data" : {"error":"查看失败："+err, "time" : time},
       "success" : '.failed'
     };
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('failed-md', msg.data)
+    }) : session?.text('failed', msg.data));
     log.warn("Sent:");
     log.warn(msg);
+    return 1;
   }
-  return msg;
 }
 
 // 指令 Meme
@@ -513,11 +544,13 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
     msg = {
       "time" : time,
       "quote" : h.quote(session.messageId),
-      "success" : '.forbidden'
+      "error" : "此指令不允许在本群使用。"
     };
     log.warn("Sent:");
     log.warn(msg);
-    await session.send(session.text(msg["success"], msg));
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('failed-md', msg)
+    }) : session?.text('failed', msg));
     return 0;
   }
   const api = (count) ? ctx.config.memesAPI[`${session.event.guild?.id}`] + `&type=1&count=${count}` : ctx.config.memesAPI[`${session.event.guild?.id}`];
@@ -530,31 +563,30 @@ export async function getMeme(ctx: Context, session: Session, count: number):Pro
       "title" : response.data.data.title,
       "image" : h.image(response.data.data.image),
       "quote" : h.quote(session.messageId),
-      "success" : '.msg'
     };
     log.debug("Sent:");
     log.debug(msg);
+    await session?.send(session?.bot.adapterName == "qq" ? session?.text('.msg-qq', msg) : session?.text('.msg', msg));
+    return 0;
   } else {
     let err: string;
     if (response.code) {
       err = (response.isJson) ? response.error['data'] : response.error;
-    }
-    else {
+    } else {
       err = response.error.message;
     }
     msg = {
-      "time" : time,
-      "data" : err,
-      "quote" : h.quote(session.messageId),
-      "success" : '.failed'
+      "time": time,
+      "error": "获取失败：" + err,
+      "quote": h.quote(session.messageId),
     };
     log.warn("Sent:");
     log.warn(msg);
+    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+      content: session?.text('failed-md', msg)
+    }) : session?.text('failed', msg));
+    return 0;
   }
-  // 如果未成功则尝试重发
-  const status = await session.send(session.text(msg["success"], msg));
-  if (!status) await session.send(session.text(msg["success"], msg));
-  return 0;
 }
 
 // 指令 Cat
@@ -574,19 +606,27 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
   const response = await fun.request<APICat>(ctx.config.catAPI, {}, ctx.config.timeout, log);
   if (response.success) {
     log.debug(response.data);
-    // 发送消息 如果未成功则尝试重发
-    const status = await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
-    if (!status) await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(response.data[0].url)}));
+    const msg = {"quote": h.quote(session.messageId), "image": h.image(response.data[0].url)};
+    await session.send(session.text(".msg", msg));
     log.debug("Sent:");
     log.debug(response.data[0].url);
   } else {
-    if (response.code){
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), 'data' : (response.isJson) ? response.error['error'] : response.error, "time": time}));
+    if (response.code) {
+      const msg = {
+        "quote": h.quote(session.messageId),
+        'data': (response.isJson) ? "获取失败：" + response.error['error'] : "获取失败：" + response.error,
+        "time": time
+      };
+      await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+        content: session?.text('failed-md', msg)
+      }) : session?.text('failed', msg));
       log.warn("Sent:");
       log.warn(response.error);
-    }
-    else {
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), 'data' : response.error.message, "time": time}));
+    } else {
+      const msg = {"quote": h.quote(session.messageId), 'data': "获取失败：" + response.error.message, "time": time};
+      await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
+        content: session?.text('failed-md', msg)
+      }) : session?.text('failed', msg));
       log.warn("Sent:");
       log.warn(response.error);
     }
