@@ -6,7 +6,7 @@ import path from 'path';
 import { Context, FlatPick, Random, Time, sleep } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // node-async-bot-all types
-import { APINews, APIUserInfo } from "./commands.ts";
+import { APINews } from "./commands.ts";
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from 'steam-server-query';
 // @bbob/html preset-html5 ^4.3.1
@@ -270,76 +270,6 @@ export async function request<T = any>(
       isJson: false
     };
   }
-}
-
-// 读取QQ资料卡文件
-export async function readUserCardFile(userInfo: APIUserInfo): Promise<string> {
-  let card: string;
-  try{
-    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userCard.html";
-    card = await fs.promises.readFile(aPath, 'utf8');
-    let sex_so: string;
-    let sex: string;
-    // 性别
-    if (userInfo.sex == "male"){
-      sex = "♂";
-      sex_so = "sex-male";
-    } else if (userInfo.sex == "female"){
-      sex = "♀";
-      sex_so = "sex-female";
-    } else {
-      // 神秘
-      sex = "猫娘";
-      sex_so = "sex-unknown";
-    }
-    // 替换
-    card = card.toString()
-      .replace("{avatarUrl}", userInfo.avatar_url)
-      .replace("{nickname}", userInfo.nickname)
-      .replace("{sex}", sex)
-      .replace("{sex-so}", sex_so)
-      .replace("{age}", String(userInfo.age))
-      .replace("{longNick}", (userInfo.long_nick=="") ? "<无>" : `“ ${userInfo.long_nick} ”`)
-      .replace("{qq}", userInfo.qq)
-      .replace("{qqLevel}", String(userInfo.qq_level))
-      .replace("{qid}", (userInfo.qid=="") ? "<无>" : userInfo.qid)
-      .replace("{location}", (userInfo.location=="") ? "<无>" : userInfo.location)
-      .replace("{email}", (userInfo.email=="") ? "<无>" : userInfo.email)
-      .replace("{regTime}", userInfo.reg_time)
-      .replace("{lastUpdated}", userInfo.last_updated);
-  } catch (error) {
-    card = error.message;
-  }
-  return card;
-}
-
-// 读取消息传图文件
-export async function readUserMsgFile(userName:string, userAvatar:string, msg:string, inversion: boolean | undefined, replyUserName:string | undefined, replyMsg:string | undefined): Promise<string> {
-  let html: string;
-  try{
-    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"userMsg.html";
-    html = await fs.promises.readFile(aPath, 'utf8');
-    // 替换
-    html = html.toString()
-      .replace("{userData.avatarUrl}", userAvatar)
-      .replace("{userData.username}", userName)
-      .replace("{userData.message}", msg)
-      .replace("{replyData.username}", replyUserName as string)
-      .replace("{replyData.message}", replyMsg as string)
-      .replace(
-        /<at\s+(?:id=["']([^"']*)["']\s+name=["']([^"']*)["']|name=["']([^"']*)["']\s+id=["']([^"']*)["'])\s*\/?>/g,
-        (match, id1, name1, name2, id2) => {
-          const name = name1 || name2 || id1 || id2 || match;
-          return `@${name}`;
-        }
-      )
-      .replace("<at type=\"all\"/>", "@全体成员");
-    if (inversion) html = html.replace("//// ", "");
-    if (replyUserName!=undefined) html = html.replace("/**/", "//// ");
-  } catch (error) {
-    html = error.message;
-  }
-  return html;
 }
 
 // A2S

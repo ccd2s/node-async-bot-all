@@ -1,5 +1,5 @@
 // koishi and plugin
-import { Context, Dict, Schema, Session, h } from 'koishi';
+import { Context, Schema, Session, h } from 'koishi';
 // node-async-bot-all
 import * as command from './commands.ts';
 import * as fun from './fun.ts';
@@ -47,12 +47,6 @@ interface ConfigV3Server {
   type: "mc" | "a2s" | null | undefined
 }
 
-// 测试中心服务器配置项
-interface CenterServerConfig {
-  id: string,
-  name: string
-}
-
 // 配置项类型定义
 export interface Config {
   cxV3: Array<ConfigCxV3>,
@@ -60,12 +54,8 @@ export interface Config {
   htmlTimeout:number,
   timeout:number,
   baAPI:string[],
-  slTest:CenterServerConfig[],
-  steamAPI:string,
   newsAPI:string,
-  memesAPI:Dict<string>,
   catAPI:string,
-  qqAPI:string,
   slNews:string[],
   specialMsg:string[],
   reactionId:number[];
@@ -99,17 +89,8 @@ export const Config: Schema<Config> =
       baAPI: Schema.array(String).default(['https://rba.kanostar.top/portrait']).description('随机BA图 API')
     }).description('随机BA图'),
     Schema.object({
-      steamAPI: Schema.string().default('https://api.tasaed.top/get/steamid/').description('转换 Steam ID API')
-    }).description('转换 Steam ID'),
-    Schema.object({
-      memesAPI: Schema.dict(String).role('table').description('群友 meme API')
-    }).description('群友 meme'),
-    Schema.object({
       catAPI: Schema.string().default('https://api.thecatapi.com/v1/images/search').description('随机猫猫图 API')
     }).description('随机猫猫图'),
-    Schema.object({
-      qqAPI: Schema.string().default('https://uapis.cn/api/v1/social/qq/userinfo').description('获取 QQ 信息 API')
-    }).description('获取 QQ 信息'),
     Schema.object({
       slNews: Schema.array(String).default(['']).description('{platform}:{channelId}'),
       newsAPI: Schema.string().default('https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1').description('新闻 API')
@@ -118,12 +99,6 @@ export const Config: Schema<Config> =
       specialMsg: Schema.array(String).default([]).description('特殊消息'),
       reactionId: Schema.array(Number).default([]).description('回应表情 ID')
     }).description('特殊消息回应'),
-    Schema.object({
-      slTest: Schema.array(Schema.object({
-        id: Schema.string().description('服务器 ID'),
-        name: Schema.string().description('服务器 名称')
-      })).default([{"id": "1", "name": "中心 鲁贝 1"}, {"id": "19", "name": "中心 斯特拉斯堡 1"}, {"id": "3", "name": "Steam 认证 API"}]).description('测试中心服务器')
-    }).description('测试中心服务器'),
   ]).description('基础设置');
 
 async function startReaction(session: Session) {
@@ -282,62 +257,23 @@ export function apply(ctx: Context) {
       await command.getBlueArchive(ctx, session as Session);
       await endReaction(session as Session);
     });
-  na.subcommand('centerServerTest')
-    .alias('测测中心服务器')
-    .action(async ({ session }) => {
-      await startReaction(session as Session);
-      const ct = await command.centerServerTest(ctx, session as Session);
-      if (ct==0) {
-        await endReaction(session as Session);
-      } else {
-        await endReactionFailed(session as Session);
-      }
-    });
-  na.subcommand('meme [序号:posint]')
-    .alias('memes')
-    .action(async ({ session },count) => {
-      await startReaction(session as Session);
-      await command.getMeme(ctx, session as Session, count);
-      await endReaction(session as Session);
-    });
+  // na.subcommand('centerServerTest')
+  //   .alias('测测中心服务器')
+  //   .action(async ({ session }) => {
+  //     await startReaction(session as Session);
+  //     const ct = await command.centerServerTest(ctx, session as Session);
+  //     if (ct==0) {
+  //       await endReaction(session as Session);
+  //     } else {
+  //       await endReactionFailed(session as Session);
+  //     }
+  //   });
   na.subcommand('randomCat')
     .alias('随机猫猫图')
     .alias('随机猫猫')
     .action(async ({ session }) => {
       await startReaction(session as Session);
       await command.getCat(ctx, session as Session);
-      await endReaction(session as Session);
-    });
-  na.subcommand('getQQInfo <QQ号:string>')
-    .alias('获取QQ信息')
-    .action(async ({ session }, qq) => {
-      await startReaction(session as Session);
-      if (qq==undefined || isNaN(Number(qq))) {
-        await endReactionFailed(session as Session);
-        return session?.text('.command');
-      }
-      await command.getQQInfo(ctx, session as Session, qq);
-      await endReaction(session as Session);
-    });
-  na.subcommand('msg2img')
-    .option('inversion', '-i')
-    .alias('消息转图')
-    .alias('m')
-    .action(async ({ session, options }) => {
-      await startReaction(session as Session);
-      await command.getMsg(ctx, session as Session, options?.inversion);
-      await endReaction(session as Session);
-    });
-  na.subcommand('use <user:user> [方法:string]')
-    .alias('u')
-    .action(async ({ session }, user, desc) => {
-      await startReaction(session as Session);
-      const qq = user?.split(':')?.[1];
-      if (qq==undefined || isNaN(Number(qq))) {
-        await endReactionFailed(session as Session);
-        return session?.text('.command');
-      }
-      await command.getUse(ctx, session as Session, qq, desc);
       await endReaction(session as Session);
     });
 }

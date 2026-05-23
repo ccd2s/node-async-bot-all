@@ -25,39 +25,10 @@ interface APICat {
   };
 }
 
-// Meme API
-interface APIMeme {
-  data: {
-    title: string;
-    image: string;
-  };
-  success: boolean;
-}
-
 // 随机文本 API
 interface APIRandomWord {
   data: string;
   success: boolean;
-}
-
-/**
- * QQ 用户 API
- * */
-export interface APIUserInfo {
-  qq: string;
-  nickname: string;
-  long_nick: string;
-  avatar_url: string;
-  age: number;
-  sex: string;
-  qid: string;
-  qq_level: number;
-  location: string;
-  email: string;
-  is_vip: boolean;
-  vip_level: number;
-  reg_time: string;
-  last_updated: string;
 }
 
 // Steam 新闻 API
@@ -530,65 +501,6 @@ export async function centerServerTest(ctx: Context, session: Session):Promise<n
   }
 }
 
-// 指令 Meme
-export async function getMeme(ctx: Context, session: Session, count: number):Promise<Number> {
-  // logger
-  const log = ctx.logger('getMeme');
-  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  // 设立必要变量
-  let msg: object;
-  // 获取香港时区当前时间
-  const time = fun.getHongKongTime();
-  if(ctx.config.memesAPI[`${session.event.guild?.id}`]==undefined){
-    // 发送消息
-    msg = {
-      "time" : time,
-      "quote" : h.quote(session.messageId),
-      "error" : "此指令不允许在本群使用。"
-    };
-    log.warn("Sent:");
-    log.warn(msg);
-    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
-      content: session?.text('failed-md', msg)
-    }) : session?.text('failed', msg));
-    return 0;
-  }
-  const api = (count) ? ctx.config.memesAPI[`${session.event.guild?.id}`] + `&type=1&count=${count}` : ctx.config.memesAPI[`${session.event.guild?.id}`];
-  // 发送请求
-  const response = await fun.request<APIMeme>(api, {}, ctx.config.timeout, log);
-  if (response.success) {
-    // 发送消息
-    msg = {
-      "time" : time,
-      "title" : response.data.data.title,
-      "image" : h.image(response.data.data.image),
-      "quote" : h.quote(session.messageId),
-    };
-    log.debug("Sent:");
-    log.debug(msg);
-    await session?.send(session?.bot.adapterName == "qq" ? session?.text('.msg-qq', msg) : session?.text('.msg', msg));
-    return 0;
-  } else {
-    let err: string;
-    if (response.code) {
-      err = (response.isJson) ? response.error['data'] : response.error;
-    } else {
-      err = response.error.message;
-    }
-    msg = {
-      "time": time,
-      "error": "获取失败：" + err,
-      "quote": h.quote(session.messageId),
-    };
-    log.warn("Sent:");
-    log.warn(msg);
-    await session?.send(session?.bot.adapterName == "qq" ? h("qq:markdown", {
-      content: session?.text('failed-md', msg)
-    }) : session?.text('failed', msg));
-    return 0;
-  }
-}
-
 // 指令 Cat
 export async function getCat(ctx: Context, session: Session):Promise<Number> {
   // 日志
@@ -630,134 +542,6 @@ export async function getCat(ctx: Context, session: Session):Promise<Number> {
       log.warn("Sent:");
       log.warn(response.error);
     }
-  }
-  return 0;
-}
-
-// 指令 获取 qq 信息
-export async function getQQInfo(ctx: Context, session: Session, qq: string):Promise<number> {
-  // logger
-  const log = ctx.logger('getQQInfo');
-  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  // 获取香港时区当前时间
-  const time = fun.getHongKongTime();
-  if (ctx.config.qqAPI==undefined){
-    // 未指定 API
-    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : "未指定 API", "time": time}));
-    log.warn("未指定 API");
-    return 1;
-  }
-  // 发送请求
-  const response = await fun.request<APIUserInfo>(ctx.config.qqAPI+`?qq=${qq}`, {}, ctx.config.timeout, log);
-  if (response.success) {
-    const fullHtml = await fun.readUserCardFile(response.data);
-    log.debug(fullHtml);
-    const page = await ctx.puppeteer.page();
-    try {
-      await page.setViewport({
-        width: 450,
-        height: 650,
-        deviceScaleFactor: 2
-      });
-      await page.setContent(fullHtml, { timeout: ctx.config.htmlTimeout, waitUntil: 'networkidle0' });
-      const { width, height } = await page.evaluate(() => ({
-        width: document.body.scrollWidth,
-        height: document.body.scrollHeight
-      }));
-      await page.setViewport({ width, height, deviceScaleFactor: 2 });
-      const image = await page.screenshot({ type: 'png', omitBackground: true });
-      await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
-    } catch(err) {
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data":"图片渲染失败"}));
-      log.error('图片渲染失败:', err);
-      return 1;
-    } finally {
-      if (page && !page.isClosed()) await page.close()
-    }
-    log.debug("Sent: Image");
-  } else {
-    if (response.code){
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : (response.isJson) ? response.error['error'] : response.error, "time": time}));
-      log.warn("Sent:");
-      log.warn(response.error);
-    }
-    else {
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "data" : response.error.message, "time": time}));
-      log.warn("Sent:");
-      log.warn(response.error);
-    }
-  }
-  return 0;
-}
-
-// 指令 消息转图
-export async function getMsg(ctx: Context, session: Session, inversion: boolean | undefined):Promise<number> {
-  // logger
-  const log = ctx.logger('getMsg');
-  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  log.debug(`inversion: ${inversion}`);
-  // 获取香港时区当前时间
-  const time = fun.getHongKongTime();
-  // 未引用时退出
-  if (!session.quote || !session.quote.user) {
-    await session.send(session.text(".null"));
-    log.warn('未引用任何信息');
-    return 1;
-  }
-  // 禁止套娃！
-  if (session.quote.user.id==session.event.selfId) {
-    await session.send(session.text(".matroska", {"quote" : h.quote(session.messageId)}));
-    log.debug("套娃");
-    return 1;
-  }
-  // 获取用户信息
-  const user = await session.bot.getUser(session.quote.user.id, session.channelId);
-  // 消息内容 支持图片
-  const msg:string = session.quote.content as string;
-  const quoteMsg:string | undefined = session.quote.quote?.content;
-  const quoteUser:string | undefined = session.quote.quote?.user?.name;
-  log.debug(msg);
-  // 如果获取失败
-  if (!user.name || !user.avatar) {
-    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "获取用户信息失败。"}));
-    log.error('获取用户信息失败');
-    return 1;
-  }
-  const page = await ctx.puppeteer.page();
-  const html = await fun.readUserMsgFile(user.name, user.avatar, msg, inversion, quoteUser, quoteMsg);
-  log.debug(html);
-  try {
-    await page.setViewport({
-      width: 450,
-      height: 1,
-      deviceScaleFactor: 2
-    });
-    await page.setContent(html, { timeout: ctx.config.htmlTimeout, waitUntil: 'networkidle0' });
-    const { width, height } = await page.evaluate(() => ({
-      width: document.body.scrollWidth + 50,
-      height: document.body.scrollHeight
-    }));
-    await page.setViewport({ width, height, deviceScaleFactor: 2 });
-    // 选定元素截图
-    const element = await page.$('#target-element');
-    if (element) {
-      const image = await element.screenshot({
-        type: 'png',
-        omitBackground: true // 使得 CSS 中未定义的背景部分透明
-      });
-      await session.send(session.text(".msg", {"quote" : h.quote(session.messageId), "image" : h.image(image,  'image/png')}));
-      log.debug("Sent: Image");
-    } else {
-      await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data" : "未找到目标元素。"}));
-      log.error('未找到目标元素');
-      return 1;
-    }
-  } catch(err) {
-    await session.send(session.text(".failed", {"quote" : h.quote(session.messageId), "time" : time, "data":"图片渲染失败"}));
-    log.error('图片渲染失败:', err);
-    return 1;
-  } finally {
-    if (page && !page.isClosed()) await page.close()
   }
   return 0;
 }
@@ -819,13 +603,4 @@ export async function getNewsMsg(ctx: Context, type: number):Promise<{success: b
   } else {
     return {success: false, msg: "请求 Steam API 失败"};
   }
-}
-
-// 指令 获取 qq 信息
-export async function getUse(ctx: Context, session: Session, qq: string, desc: string | undefined):Promise<number> {
-  // logger
-  const log = ctx.logger('getUse');
-  log.debug(`Got: {"form":"${session.platform}:${session.event.guild?.id}","user":"${session.event.user?.id}","timestamp":${session.event.timestamp},"messageId":"${session.event.message?.id}"}`);
-  await session.send(session.text(".msg", {"at": h.at(session.event.user?.id), "at2": h.at(qq), "desc": desc ?? "使用"}));
-  return 0;
 }
