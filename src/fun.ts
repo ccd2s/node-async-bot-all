@@ -1,40 +1,42 @@
 // node
-import os from 'os';
-import fs from 'fs';
-import path from 'path';
+import os from "os";
+import fs from "fs";
+import path from "path";
 // koishi and plugin
 import { Context, FlatPick, Random, Time, sleep } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // node-async-bot-all types
 import { APINews } from "./commands.ts";
 // steam-server-query ^1.1.3
-import { queryGameServerInfo } from 'steam-server-query';
+import { queryGameServerInfo } from "steam-server-query";
 // @bbob/html preset-html5 ^4.3.1
-import bbobHTML from '@bbob/html';
-import presetHTML5 from '@bbob/preset-html5';
+import bbobHTML from "@bbob/html";
+import presetHTML5 from "@bbob/preset-html5";
 // bing-translate-api ^4.2.0
-import { translate } from 'bing-translate-api';
+import { translate } from "bing-translate-api";
 // minecraft-server-util ^5.4.4
-import { JavaStatusResponse, status } from 'minecraft-server-util';
+import { JavaStatusResponse, status } from "minecraft-server-util";
 
 // HTTP 请求类型
 export type HttpResponse<T> =
-  | { success: true; data: T; }
+  | { success: true; data: T }
   | { success: false; error: any; code?: number; isJson: boolean };
 
 // A2S 类型
-export type serverInfo = | {
-  players: string;
-  protocol: number;
-  version: string;
-  bots: number;
-  port: number;
-  success: true;
-} | { success: false; error: any; };
+export type serverInfo =
+  | {
+      players: string;
+      protocol: number;
+      version: string;
+      bots: number;
+      port: number;
+      success: true;
+    }
+  | { success: false; error: any };
 
 // 获取系统名称
 function getSystemName(): string {
-  return os.type() + ' ' + os.release();
+  return os.type() + " " + os.release();
 }
 
 // 获取内存使用率
@@ -43,7 +45,7 @@ function getMemoryUsage(): string {
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
   const percentage = Math.round((usedMemory / totalMemory) * 10000) / 100;
-  const memory = `${(usedMemory / (1024 ** 3)).toFixed(2)}GB / ${(totalMemory / (1024 ** 3)).toFixed(2)}GB`;
+  const memory = `${(usedMemory / 1024 ** 3).toFixed(2)}GB / ${(totalMemory / 1024 ** 3).toFixed(2)}GB`;
   return `${percentage}%（${memory}）`;
 }
 
@@ -80,7 +82,7 @@ async function getCpuUsage(): Promise<string> {
   }
 
   // 计算使用率百分比
-  const usage = 100 - (100 * totalIdle / totalTick);
+  const usage = 100 - (100 * totalIdle) / totalTick;
   return `${Math.round(usage * 100) / 100}%`;
 }
 
@@ -89,18 +91,20 @@ async function getCpuUsage(): Promise<string> {
  * @return {name: string,cpu: string,memory: string,success: 0}
  * @return {data: string,success: 1}
  * */
-export async function getSystemUsage():Promise<{name: string,cpu: string,memory: string,success: 0}|{data: string,success: 1}> {
+export async function getSystemUsage(): Promise<
+  { name: string; cpu: string; memory: string; success: 0 } | { data: string; success: 1 }
+> {
   try {
     return {
-      "name": getSystemName(),
-      "cpu": await getCpuUsage(),
-      "memory": getMemoryUsage(),
-      "success": 0
+      name: getSystemName(),
+      cpu: await getCpuUsage(),
+      memory: getMemoryUsage(),
+      success: 0
     };
   } catch (error) {
     return {
-      "data": error.message,
-      "success": 1
+      data: error.message,
+      success: 1
     };
   }
 }
@@ -113,22 +117,22 @@ export function getHongKongTime(): string {
   const now = new Date();
 
   // 使用 Intl.DateTimeFormat 获取香港时区的时间
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Hong_Kong',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+  const formatter = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Hong_Kong",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false
   });
 
   const parts = formatter.formatToParts(now);
   const dateObj: Record<string, string> = {};
 
-  parts.forEach(part => {
-    if (part.type !== 'literal') {
+  parts.forEach((part) => {
+    if (part.type !== "literal") {
       dateObj[part.type] = part.value;
     }
   });
@@ -138,14 +142,16 @@ export function getHongKongTime(): string {
 }
 
 // 读取信息文件
-export async function readInfo(ctx: Context): Promise<{ version: string, koishiVersion: string, nodeVersion: string } | string> {
+export async function readInfo(
+  ctx: Context
+): Promise<{ version: string; koishiVersion: string; nodeVersion: string } | string> {
   try {
     const deps = await ctx.installer.getDeps();
     return {
       version: (await ctx.database.get("botData", "version"))[0].data,
       koishiVersion: deps.koishi.resolved as string,
-      nodeVersion: process.versions.node,
-    }
+      nodeVersion: process.versions.node
+    };
   } catch (error) {
     return error?.message ?? "Unknown error";
   }
@@ -167,20 +173,23 @@ export function formatTimestampDiff(start: number, end: number): string {
 // 计算收发消息数量
 export async function getMsgCount(ctx: Context): Promise<Object> {
   // 从数据库中获取
-  const array = await ctx.database.get('analytics.message', {date:Time.getDateNumber()-1},['type','count']);
+  const array = await ctx.database.get("analytics.message", { date: Time.getDateNumber() - 1 }, [
+    "type",
+    "count"
+  ]);
   // 变量初始化
   let receive = 0;
   let send = 0;
-  array.forEach((item:FlatPick<Analytics.Message, "type" | "count">) => {
-    if(item.type=='receive'){
+  array.forEach((item: FlatPick<Analytics.Message, "type" | "count">) => {
+    if (item.type == "receive") {
       // 收
-      receive=receive+item.count;
-    }else {
+      receive = receive + item.count;
+    } else {
       // 发
-      send=send+item.count;
+      send = send + item.count;
     }
   });
-  return {"receive":receive,"send":send};
+  return { receive: receive, send: send };
 }
 
 /** Random
@@ -189,7 +198,7 @@ export async function getMsgCount(ctx: Context): Promise<Object> {
  * @param data
  * @param data2
  */
-export function random(type:number = 0, data:number | number[], data2?:number):number {
+export function random(type: number = 0, data: number | number[], data2?: number): number {
   const random = new Random(() => Math.random());
   switch (type) {
     case 0:
@@ -219,7 +228,6 @@ export async function request<T = any>(
   timeout: number = 8000,
   log?: any
 ): Promise<HttpResponse<T>> {
-
   // 原生超时信号
   const signal = AbortSignal.timeout(timeout);
 
@@ -255,10 +263,9 @@ export async function request<T = any>(
       success: true,
       data: responseData as T
     };
-
   } catch (error: any) {
     // 处理网络错误或超时
-    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+    const isTimeout = error.name === "TimeoutError" || error.name === "AbortError";
     const errorMessage = isTimeout ? `请求超时。(${timeout}ms)` : error.message;
 
     log?.error(url);
@@ -273,7 +280,7 @@ export async function request<T = any>(
 }
 
 // A2S
-export async function queryA2S(host:string, log:any):Promise<serverInfo> {
+export async function queryA2S(host: string, log: any): Promise<serverInfo> {
   try {
     // 查询
     const playerResponse = await queryGameServerInfo(host);
@@ -297,19 +304,19 @@ export async function queryA2S(host:string, log:any):Promise<serverInfo> {
 }
 
 // 读取Steam新闻文件
-export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
+export async function readNewsFile(info: APINews, log: any): Promise<string[]> {
   let html: string;
-  try{
-    const aPath = path.resolve(__dirname, '..')+path.sep+"res"+path.sep+"slNews.html";
-    html = await fs.promises.readFile(aPath, 'utf8');
+  try {
+    const aPath = path.resolve(__dirname, "..") + path.sep + "res" + path.sep + "slNews.html";
+    html = await fs.promises.readFile(aPath, "utf8");
     // 翻译
     const content = info.appnews.newsitems[0].contents
       .replace("[spoiler]", "")
       .replace("[/spoiler]", "")
-      .replace(/\r\n/g, '\n')      // 统一换行符
-      .replace(/\n{3,}/g, '\n\n')  // 多个换行压缩
-      .split('\n\n')
-      .map(p => p.trim())
+      .replace(/\r\n/g, "\n") // 统一换行符
+      .replace(/\n{3,}/g, "\n\n") // 多个换行压缩
+      .split("\n\n")
+      .map((p) => p.trim())
       .filter(Boolean);
     // 原文+翻译
     const bilingualParagraphs: string[] = [];
@@ -322,13 +329,14 @@ export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
       );
     }
     // 还原为 string
-    const finalText = bilingualParagraphs.join("<br />").replace(/<br \/>{2,}/g, '<br />');
+    const finalText = bilingualParagraphs.join("<br />").replace(/<br \/>{2,}/g, "<br />");
     // bbcode 转 html
-    const contentHtml = bbobHTML(finalText, presetHTML5())
+    const contentHtml = bbobHTML(finalText, presetHTML5());
     // Steam 给的时间戳是秒级别的，得补3个0才正常
-    const date = Number(info.appnews.newsitems[0].date+"000");
+    const date = Number(info.appnews.newsitems[0].date + "000");
     // 替换
-    html = html.toString()
+    html = html
+      .toString()
       .replace("{date}", new Date(date).toLocaleString())
       .replace("{title}", info.appnews.newsitems[0].title)
       .replace("{content}", contentHtml);
@@ -343,16 +351,16 @@ export async function readNewsFile(info: APINews, log:any): Promise<string[]> {
 /**
  * 翻译 API
  */
-export async function translateAPI(log:any, text:string):Promise<string> {
+export async function translateAPI(log: any, text: string): Promise<string> {
   // 随机间隔
   const ms = random(0, 0, 250);
   await sleep(ms);
   // 翻译
   await translate(text, "en", "zh-Hans")
-    .then(result => {
+    .then((result) => {
       text = result?.translation as string;
     })
-    .catch(err => {
+    .catch((err) => {
       log.error(err);
     });
   return text;
@@ -361,25 +369,27 @@ export async function translateAPI(log:any, text:string):Promise<string> {
 /**
  * Minecraft SLP
  */
-export async function slpInfo(log:any, host:string, port:number, timeout?:number)
-  : Promise<{ success: true, data: JavaStatusResponse } | { success: false, data: string }>
-{
+export async function slpInfo(
+  log: any,
+  host: string,
+  port: number,
+  timeout?: number
+): Promise<{ success: true; data: JavaStatusResponse } | { success: false; data: string }> {
   try {
     // ping
-    const info = await status(host, port, {timeout: timeout as number});
+    const info = await status(host, port, { timeout: timeout as number });
     log.info(info);
     // 成功
     return {
-      "success": true,
-      "data": info
+      success: true,
+      data: info
     };
   } catch (error) {
     // 失败！
     log.error(error);
     return {
-      "success": false,
-      "data": error.message
+      success: false,
+      data: error.message
     };
   }
-
 }
