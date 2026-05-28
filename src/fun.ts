@@ -88,8 +88,6 @@ async function getCpuUsage(): Promise<string> {
 
 /**
  * 系统信息主函数
- * @return {name: string,cpu: string,memory: string,success: 0}
- * @return {data: string,success: 1}
  * */
 export async function getSystemUsage(): Promise<
   { name: string; cpu: string; memory: string; success: 0 } | { data: string; success: 1 }
@@ -111,7 +109,7 @@ export async function getSystemUsage(): Promise<
 
 /**
  * 获取香港时间
- * @return 如："2025-12-21 12:49:59"
+ * @returns 如："2025-12-21 12:49:59"
  * */
 export function getHongKongTime(): string {
   const now = new Date();
@@ -171,7 +169,7 @@ export function formatTimestampDiff(start: number, end: number): string {
 }
 
 // 计算收发消息数量
-export async function getMsgCount(ctx: Context): Promise<Object> {
+export async function getMsgCount(ctx: Context): Promise<object> {
   // 从数据库中获取
   const array = await ctx.database.get("analytics.message", { date: Time.getDateNumber() - 1 }, [
     "type",

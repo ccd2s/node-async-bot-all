@@ -1,7 +1,7 @@
 // koishi and plugin
 import { Context, Session, h, Command } from "koishi";
 // node-async-bot-all
-import * as command from "./commands.ts";
+import { CommandHandler } from "./commands.ts";
 import * as fun from "./fun.ts";
 import { botDataTables, botDataType } from "./config.ts";
 import { version } from "../package.json";
@@ -29,45 +29,6 @@ declare module "koishi" {
 // 数据库类型
 
 export { Config, name, usage } from "./config.ts";
-
-async function startReaction(session: Session) {
-  if (session.bot.createReaction)
-    await session.bot.createReaction(
-      session.channelId as string,
-      session.messageId as string,
-      `face|424`
-    );
-}
-
-async function endReaction(session: Session) {
-  if (session.bot.deleteReaction)
-    await session.bot.deleteReaction(
-      session.channelId as string,
-      session.messageId as string,
-      `face|424`
-    );
-  if (session.bot.createReaction)
-    await session.bot.createReaction(
-      session.channelId as string,
-      session.messageId as string,
-      `face|144`
-    );
-}
-
-async function endReactionFailed(session: Session) {
-  if (session.bot.deleteReaction)
-    await session.bot.deleteReaction(
-      session.channelId as string,
-      session.messageId as string,
-      `face|424`
-    );
-  if (session.bot.createReaction)
-    await session.bot.createReaction(
-      session.channelId as string,
-      session.messageId as string,
-      `face|38`
-    );
-}
 
 // 插件注册
 export function apply(ctx: Context) {
@@ -137,13 +98,69 @@ export class NodeAsyncBot {
     this.na = this.ctx.command("na");
   }
 
+  // reaction 辅助方法
+  private async startReaction(session: Session): Promise<void> {
+    if (session.bot.createReaction)
+      await session.bot.createReaction(
+        session.channelId as string,
+        session.messageId as string,
+        `face|424`
+      );
+  }
+
+  private async endReaction(session: Session): Promise<void> {
+    if (session.bot.deleteReaction)
+      await session.bot.deleteReaction(
+        session.channelId as string,
+        session.messageId as string,
+        `face|424`
+      );
+    if (session.bot.createReaction)
+      await session.bot.createReaction(
+        session.channelId as string,
+        session.messageId as string,
+        `face|144`
+      );
+  }
+
+  private async endReactionFailed(session: Session): Promise<void> {
+    if (session.bot.deleteReaction)
+      await session.bot.deleteReaction(
+        session.channelId as string,
+        session.messageId as string,
+        `face|424`
+      );
+    if (session.bot.createReaction)
+      await session.bot.createReaction(
+        session.channelId as string,
+        session.messageId as string,
+        `face|38`
+      );
+  }
+
+  // 执行指令的通用流程：reaction + 命令执行
+  private async execCommand(
+    session: Session,
+    loggerName: string,
+    fn: (handler: CommandHandler) => Promise<number | void>
+  ): Promise<void> {
+    const handler = new CommandHandler(this.ctx, session, loggerName);
+    await this.startReaction(session);
+    const result = await fn(handler);
+    if (result === 0 || result === undefined) {
+      await this.endReaction(session);
+    } else {
+      await this.endReactionFailed(session);
+    }
+  }
+
   public async registerNews(): Promise<void> {
     if (this._registeredNews) return;
     this._registeredNews = true;
     // sl 新闻 定时任务与指令
     this.na.subcommand("slnews").action(async () => {
       const log = this.ctx.logger("slnews");
-      const outMsg = await command.getNewsMsg(this.ctx, 1);
+      const outMsg = await CommandHandler.getNewsMsg(this.ctx, 1);
       if (outMsg.data) {
         return `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`;
       } else {
@@ -162,7 +179,7 @@ export class NodeAsyncBot {
     // 事件监听
     this.ctx.on("node-async/news", async () => {
       // 获取新闻
-      const outMsg = await command.getNewsMsg(this.ctx, 0);
+      const outMsg = await CommandHandler.getNewsMsg(this.ctx, 0);
       if (outMsg.data) {
         // 发现新的新闻！
         await this.ctx.broadcast(
@@ -194,129 +211,84 @@ export class NodeAsyncBot {
     if (this._registeredCommand) return;
     this._registeredCommand = true;
     this.na.subcommand("cxGame").action(async ({ session }) => {
-      await startReaction(session as Session);
-      const cx = await command.getServer(this.ctx, session as Session);
-      if (cx == 0) {
-        await endReaction(session as Session);
-      } else {
-        await endReactionFailed(session as Session);
-      }
+      await this.execCommand(session as Session, "cx", (handler) => handler.server());
     });
     this.na
       .subcommand("status")
       .alias("stats")
       .alias("状态")
       .action(async ({ session }) => {
-        await startReaction(session as Session);
-        const status = await command.getStatus(this.ctx, session as Session);
-        if (status["success"] == 0) {
+        await this.execCommand(session as Session, "status", async (handler) => {
+          const status = await handler.status();
           await session?.send(
             session?.bot.adapterName == "qq"
               ? h("qq:markdown", {
-                  content: session?.text(".msg-md", status)
+                  content: session?.text(status["success"] == 0 ? ".msg-md" : "failed-md", status)
                 })
-              : session?.text(".msg", status)
+              : session?.text(status["success"] == 0 ? ".msg" : "failed", status)
           );
-          await endReaction(session as Session);
-        } else {
-          await session?.send(
-            session?.bot.adapterName == "qq"
-              ? h("qq:markdown", {
-                  content: session?.text("failed-md", status)
-                })
-              : session?.text("failed", status)
-          );
-          await endReactionFailed(session as Session);
-        }
+          return status["success"] == 0 ? 0 : 1;
+        });
       });
     this.na
       .subcommand("random [最小数:number] [最大数:number]")
       .alias("随机数")
       .action(async ({ session }, min, max) => {
-        await startReaction(session as Session);
-        const random = await command.getRandom(this.ctx, session as Session, min, max);
-        await session?.send(
-          session?.bot.adapterName == "qq"
-            ? h("qq:markdown", {
-                content: session?.text(".msg-md", random)
-              })
-            : session?.text(".msg", random)
-        );
-        await endReaction(session as Session);
+        await this.execCommand(session as Session, "random", async (handler) => {
+          const random = await handler.random(min, max);
+          await session?.send(
+            session?.bot.adapterName == "qq"
+              ? h("qq:markdown", {
+                  content: session?.text(".msg-md", random)
+                })
+              : session?.text(".msg", random)
+          );
+        });
       });
     this.na.subcommand("info").action(async ({ session }) => {
-      await startReaction(session as Session);
-      const info = await command.getInfo(this.ctx, session as Session);
-      if (info["success"] == 0) {
+      await this.execCommand(session as Session, "info", async (handler) => {
+        const info = await handler.info();
         await session?.send(
           session?.bot.adapterName == "qq"
             ? h("qq:markdown", {
-                content: session?.text(".msg-md", info)
+                content: session?.text(info["success"] == 0 ? ".msg-md" : "failed-md", info)
               })
-            : session?.text(".msg", info)
+            : session?.text(info["success"] == 0 ? ".msg" : "failed", info)
         );
-        await endReaction(session as Session);
-      } else {
-        await session?.send(
-          session?.bot.adapterName == "qq"
-            ? h("qq:markdown", {
-                content: session?.text("failed-md", info)
-              })
-            : session?.text("failed", info)
-        );
-        await endReactionFailed(session as Session);
-      }
+        return info["success"] == 0 ? 0 : 1;
+      });
     });
     this.na.subcommand("rw").action(async ({ session }) => {
-      await startReaction(session as Session);
-      const rw = await command.getRandomWord(this.ctx, session as Session);
-      if (rw["success"] == 0) {
+      await this.execCommand(session as Session, "rw", async (handler) => {
+        const rw = await handler.randomWord();
         await session?.send(
           session?.bot.adapterName == "qq"
             ? h("qq:markdown", {
-                content: session?.text("failed-md", rw)
+                content: session?.text(rw["success"] == 0 ? "failed-md" : "failed-md", rw)
               })
-            : session?.text("failed", rw)
+            : session?.text(rw["success"] == 0 ? "failed" : "failed", rw)
         );
-        await endReaction(session as Session);
-      } else {
-        await session?.send(
-          session?.bot.adapterName == "qq"
-            ? h("qq:markdown", {
-                content: session?.text("failed-md", rw)
-              })
-            : session?.text("failed", rw)
-        );
-        await endReactionFailed(session as Session);
-      }
+        return rw["success"] == 0 ? 0 : 1;
+      });
     });
     this.na
       .subcommand("randomBA")
       .alias("随机ba图")
       .action(async ({ session }) => {
-        await startReaction(session as Session);
-        await command.getBlueArchive(this.ctx, session as Session);
-        await endReaction(session as Session);
+        await this.execCommand(session as Session, "ba", (handler) => handler.blueArchive());
       });
-    // na.subcommand('centerServerTest')
+    // this.na
+    //   .subcommand('centerServerTest')
     //   .alias('测测中心服务器')
     //   .action(async ({ session }) => {
-    //     await startReaction(session as Session);
-    //     const ct = await command.centerServerTest(ctx, session as Session);
-    //     if (ct==0) {
-    //       await endReaction(session as Session);
-    //     } else {
-    //       await endReactionFailed(session as Session);
-    //     }
+    //     await this.execCommand(session as Session, 'centerServerTest', (handler) => handler.centerServerTest());
     //   });
     this.na
       .subcommand("randomCat")
       .alias("随机猫猫图")
       .alias("随机猫猫")
       .action(async ({ session }) => {
-        await startReaction(session as Session);
-        await command.getCat(this.ctx, session as Session);
-        await endReaction(session as Session);
+        await this.execCommand(session as Session, "cat", (handler) => handler.cat());
       });
   }
 }
