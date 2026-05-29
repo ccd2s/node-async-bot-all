@@ -31,32 +31,6 @@ interface APIRandomWord {
   success: boolean;
 }
 
-// Steam 新闻 API
-export interface APINews {
-  appnews: AppNews;
-}
-
-interface AppNews {
-  appid: number;
-  newsitems: NewsItem[];
-  count: number;
-}
-
-interface NewsItem {
-  gid: string;
-  title: string;
-  url: string;
-  is_external_url: boolean;
-  author: string;
-  contents: string;
-  feedlabel: string;
-  // 时间戳(秒)
-  date: number;
-  feedname: string;
-  feed_type: number;
-  appid: number;
-}
-
 // Uptime Kuma API
 /** 单条心跳记录 */
 interface Heartbeat {
@@ -367,8 +341,8 @@ export class CommandHandler {
     }
     const response = await fun.request<APIRandomWord>(
       ctx.config.rwAPI + "?format=json",
-      {},
-      ctx.config.timeout,
+      ctx,
+      { method: "GET", timeout: ctx.config.timeout },
       log
     );
     if (response.success) {
@@ -383,10 +357,12 @@ export class CommandHandler {
       log.debug(msg);
     } else {
       let err: string;
-      if (response.code) {
-        err = response.isJson ? response.error["data"] : response.error;
-      } else {
+      if (!response.isError && response.isObj) {
+        err = response.error["data"];
+      } else if (response.isError) {
         err = response.error.message;
+      } else {
+        err = response.error;
       }
       msg = {
         time: time,
@@ -441,8 +417,8 @@ export class CommandHandler {
     });
     const response = await fun.request<MonitorStatusResponse>(
       "https://status.scpslgame.com/api/status-page/heartbeat/nw",
-      {},
-      ctx.config.timeout,
+      ctx,
+      { method: "GET", timeout: ctx.config.timeout },
       log
     );
     if (response.success) {
@@ -483,10 +459,12 @@ export class CommandHandler {
       return 0;
     } else {
       let err: string;
-      if (response.code) {
-        err = response.isJson ? response.error["data"] : response.error;
-      } else {
+      if (!response.isError && response.isObj) {
+        err = response.error["data"];
+      } else if (response.isError) {
         err = response.error.message;
+      } else {
+        err = response.error;
       }
       msg = {
         data: { error: "查看失败：" + err, time: time },
@@ -513,7 +491,12 @@ export class CommandHandler {
       log.warn("未指定 API");
       return 1;
     }
-    const response = await fun.request<APICat>(ctx.config.catAPI, {}, ctx.config.timeout, log);
+    const response = await fun.request<APICat>(
+      ctx.config.catAPI,
+      ctx,
+      { method: "GET", timeout: ctx.config.timeout },
+      log
+    );
     if (response.success) {
       log.debug(response.data);
       const msg = { quote: h.quote(session.messageId), image: h.image(response.data[0].url) };
@@ -521,10 +504,10 @@ export class CommandHandler {
       log.debug("Sent:");
       log.debug(response.data[0].url);
     } else {
-      if (response.code) {
+      if (!response.isError) {
         const msg = {
           quote: h.quote(session.messageId),
-          data: response.isJson
+          data: response.isObj
             ? "获取失败：" + response.error["error"]
             : "获取失败：" + response.error,
           time: time
@@ -535,7 +518,7 @@ export class CommandHandler {
       } else {
         const msg = {
           quote: h.quote(session.messageId),
-          data: "获取失败：" + response.error.message,
+          data: "获取失败：" + response.error?.message,
           time: time
         };
         await this.sendFailed(msg);
@@ -550,30 +533,53 @@ export class CommandHandler {
   static async getNewsMsg(
     ctx: Context,
     type: number
-  ): Promise<{ success: boolean; data?: Buffer; msg: string }> {
+  ): Promise<{ success: boolean; data?: Buffer; msg: string }[]> {
     const log = ctx.logger("getNewsMsg");
-    const response = await fun.request<APINews>(ctx.config.newsAPI, {}, ctx.config.timeout, log);
-    if (response.success) {
-      if (
-        (await ctx.database.get("botData", "newsId"))[0]?.data ==
-          response.data.appnews.newsitems[0].gid &&
-        type != 1
-      ) {
-        log.debug("无新闻");
-        return { success: false, msg: "无可用新闻" };
+    const results: { success: boolean; data?: Buffer; msg: string }[] = [];
+    const latestIds: string[] = [];
+    const storedIds = (await ctx.database.get("botData", "newsId"))[0]?.data?.split(",") ?? [];
+
+    for (const item of ctx.config.newsAPI) {
+      const rssUrl = `https://store.steampowered.com/feeds/news/app/${item.appUrl}`;
+      log.info(`获取新闻: ${item.name} -> ${rssUrl}`);
+
+      const response = await fun.request<string>(
+        rssUrl,
+        ctx,
+        { method: "GET", timeout: ctx.config.timeout },
+        log
+      );
+      if (!response.success) {
+        log.error(`请求失败: ${item.name}`);
+        results.push({ success: false, msg: `请求 ${item.name} 新闻失败` });
+        continue;
       }
-      const db = await ctx.database.get("botData", response.data.appnews.newsitems[0].gid);
-      let html: string[] = [];
+
+      const parsed = await fun.parseNewsRssToHtml(response.data, log);
+      if (parsed.error || !parsed.guid) {
+        log.error(`解析失败: ${item.name}`, parsed.error);
+        results.push({ success: false, msg: `解析 ${item.name} 新闻失败` });
+        continue;
+      }
+      latestIds.push(parsed.guid);
+
+      // 检查是否为最新新闻（非手动调用时）
+      if (storedIds.includes(parsed.guid) && type != 1) {
+        log.debug(`无新闻更新: ${item.name}`);
+        continue;
+      }
+
+      // 获取或渲染 HTML
+      const db = await ctx.database.get("botData", parsed.guid);
+      let html: string;
       if (db[0]) {
-        html[0] = db[0].data;
+        html = db[0].data;
       } else {
-        html = await fun.readNewsFile(response.data, log);
-        if (html[1]) return { success: false, msg: `渲染图片失败` };
-        await ctx.database.upsert("botData", [
-          { id: response.data.appnews.newsitems[0].gid, data: html[0] }
-        ]);
+        html = parsed.data!;
+        await ctx.database.upsert("botData", [{ id: parsed.guid, data: html }]);
       }
-      log.debug(html);
+
+      // Puppeteer 渲染图片
       const page = await ctx.puppeteer.page();
       try {
         await page.setViewport({
@@ -581,7 +587,7 @@ export class CommandHandler {
           height: 800,
           deviceScaleFactor: 2
         });
-        await page.setContent(html[0], {
+        await page.setContent(html, {
           timeout: ctx.config.htmlTimeout,
           waitUntil: "networkidle0"
         });
@@ -595,23 +601,24 @@ export class CommandHandler {
           fullPage: true,
           omitBackground: true
         });
-        if (type == 0)
-          await ctx.database.upsert("botData", [
-            { id: "newsId", data: response.data.appnews.newsitems[0].gid }
-          ]);
-        return {
+        results.push({
           success: true,
           data: image,
-          msg: "NorthWood 发布了一个新闻（原文+机翻）：" + response.data.appnews.newsitems[0].title
-        };
+          msg: `抓取到了新的 Steam 新闻！${item.name} - ${parsed.guid}`
+        });
       } catch (err) {
-        log.error("图片渲染失败:", err);
-        return { success: false, msg: "图片渲染失败" };
+        log.error(`${item.name} 图片渲染失败:`, err);
+        results.push({ success: false, msg: `${item.name} 图片渲染失败` });
       } finally {
         if (page && !page.isClosed()) await page.close();
       }
-    } else {
-      return { success: false, msg: "请求 Steam API 失败" };
     }
+
+    // 更新最新新闻 ID
+    if (type == 0 && latestIds.length > 0) {
+      await ctx.database.upsert("botData", [{ id: "newsId", data: latestIds.join(",") }]);
+    }
+
+    return results;
   }
 }

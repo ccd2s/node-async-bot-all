@@ -16,6 +16,11 @@ interface ConfigV3Server {
   type: "mc" | "a2s" | null | undefined;
 }
 
+interface ConfigV2SteamNews {
+  name: string;
+  appUrl: string;
+}
+
 // 配置项类型定义
 export interface ConfigType {
   cxV3: Array<ConfigCxV3>;
@@ -23,9 +28,9 @@ export interface ConfigType {
   htmlTimeout: number;
   timeout: number;
   baAPI: string[];
-  newsAPI: string;
+  newsAPI: Array<ConfigV2SteamNews>;
   catAPI: string;
-  slNews: string[];
+  steamNews: string[];
   specialMsg: string[];
   reactionId: number[];
 }
@@ -76,11 +81,18 @@ export const Config: Schema<ConfigType> = Schema.intersect([
       .description("随机猫猫图 API")
   }).description("随机猫猫图"),
   Schema.object({
-    slNews: Schema.array(String).default([""]).description("{platform}:{channelId}"),
-    newsAPI: Schema.string()
-      .default("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=700330&count=1")
-      .description("新闻 API")
-  }).description("SL新闻列表"),
+    steamNews: Schema.array(String).default([""]).description("{platform}:{channelId}"),
+    newsAPI: Schema.array(
+      Schema.object({
+        name: Schema.string().description("新闻抓取的 App 名称，随便写"),
+        appUrl: Schema.string().description(
+          "新闻抓取的 AppId URL，可加参数，如 3629270/?l=schinese"
+        )
+      })
+    )
+      .default([{ name: "SCP SL", appUrl: "700330/?l=schinese" }])
+      .description("新闻抓取配置")
+  }).description("Steam 新闻抓取列表"),
   Schema.object({
     specialMsg: Schema.array(String).default([]).description("特殊消息"),
     reactionId: Schema.array(Number).default([]).description("回应表情 ID")

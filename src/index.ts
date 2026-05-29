@@ -158,13 +158,16 @@ export class NodeAsyncBot {
     if (this._registeredNews) return;
     this._registeredNews = true;
     // sl 新闻 定时任务与指令
-    this.na.subcommand("slnews").action(async () => {
-      const log = this.ctx.logger("slnews");
-      const outMsg = await CommandHandler.getNewsMsg(this.ctx, 1);
-      if (outMsg.data) {
-        return `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`;
-      } else {
-        log.error(outMsg);
+    this.na.subcommand("steamNews").action(async ({ session }) => {
+      const log = this.ctx.logger("steamNews");
+      const results = await CommandHandler.getNewsMsg(this.ctx, 1);
+      for (const outMsg of results) {
+        if (outMsg.data) {
+          await (session as Session)?.send(`${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`);
+        } else {
+          log.error(outMsg);
+          await (session as Session)?.send(outMsg.msg);
+        }
       }
     });
     // 每小时0分
@@ -179,17 +182,19 @@ export class NodeAsyncBot {
     // 事件监听
     this.ctx.on("node-async/news", async () => {
       // 获取新闻
-      const outMsg = await CommandHandler.getNewsMsg(this.ctx, 0);
-      if (outMsg.data) {
-        // 发现新的新闻！
-        await this.ctx.broadcast(
-          this.ctx.config.slNews,
-          `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`
-        );
-      } else {
-        // 啥新的新闻没有或者 boom
-        if (outMsg.msg == "无可用新闻") return;
-        await this.ctx.broadcast(this.ctx.config.slNews, outMsg.msg);
+      const results = await CommandHandler.getNewsMsg(this.ctx, 0);
+      if (results.length === 0) return;
+      for (const outMsg of results) {
+        if (outMsg.data) {
+          // 发现新的新闻！
+          await this.ctx.broadcast(
+            this.ctx.config.steamNews,
+            `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`
+          );
+        } else {
+          // 请求失败
+          await this.ctx.broadcast(this.ctx.config.steamNews, outMsg.msg);
+        }
       }
     });
     this.ctx.on("message", async (session) => {

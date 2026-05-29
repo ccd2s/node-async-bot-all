@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Steam News Template</title>
+    <style>
+      /* 基础样式与 Steam 经典暗色调背景 */
+      body {
+        background-color: #1b2838; /* Steam 经典蓝黑背景 */
+        color: #c6d4df; /* 浅灰色文字，降低视觉疲劳 */
+        font-family:
+          "Motiva Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+
+      /* 新闻卡片容器 */
+      .news-container {
+        max-width: 800px;
+        width: 100%;
+        background: #121c27; /* 略深于背景的卡片色 */
+        border-radius: 5px;
+        padding: 30px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      /* 封面图容器（自适应比例，避免拉伸） */
+      .cover-image-container {
+        width: 100%;
+        aspect-ratio: 16 / 9; /* 保持 standard 16:9 比例 */
+        background-color: #2a3f5a;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        position: relative;
+      }
+
+      .cover-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 画面裁切填充 */
+        display: block;
+      }
+
+      /* 日期样式 */
+      .news-date {
+        font-size: 14px;
+        color: #66c0f4; /* Steam 经典亮蓝色 */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        font-weight: 500;
+      }
+
+      /* 标题样式 */
+      .news-title {
+        font-size: 30px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 24px 0;
+        line-height: 1.3;
+        letter-spacing: -0.5px;
+      }
+
+      /* 分割线 */
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, #2a3f5a 0%, rgba(42, 63, 90, 0) 100%);
+        margin-bottom: 24px;
+      }
+
+      /* ==========================================================================
+       Steam BBCode 标签适配样式
+       ========================================================================== */
+
+      /* 段落 */
+      .bb_paragraph {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #acb8c4;
+        margin-top: 0;
+        margin-bottom: 18px;
+      }
+
+      /* 一级标题 */
+      .bb_h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 32px;
+        margin-bottom: 14px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #2a3f5a;
+      }
+
+      /* 二级标题 */
+      .bb_h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 26px;
+        margin-bottom: 12px;
+      }
+
+      /* 三级标题 */
+      .bb_h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #66c0f4; /* 使用亮蓝强调 */
+        margin-top: 22px;
+        margin-bottom: 10px;
+      }
+
+      /* 无序列表 */
+      .bb_ul {
+        list-style-type: none; /* 移除默认圆点，改用自定义美化 */
+        padding-left: 0;
+        margin-top: 0;
+        margin-bottom: 18px;
+      }
+
+      /* 列表项 */
+      .bb_ul li {
+        position: relative;
+        padding-left: 20px;
+        margin-bottom: 8px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #acb8c4;
+      }
+
+      /* 使用伪元素绘制 Steam 风格的点（小方块） */
+      .bb_ul li::before {
+        content: "•";
+        position: absolute;
+        left: 5px;
+        color: #66c0f4;
+        font-weight: bold;
+      }
+
+      .bb_link {
+        text-decoration: none;
+        color: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="news-container">
+      <!--!
+  <div class="cover-image-container">
+    <img class="cover-image" src="{imgUrl}" alt="Cover Image">
+  </div>!!-->
+
+      <!-- 日期占位符 -->
+      <div class="news-date">{date}</div>
+
+      <!-- 标题占位符 -->
+      <h1 class="news-title">{title}</h1>
+
+      <!-- 装饰分割线 -->
+      <div class="divider"></div>
+
+      <!-- 新闻正文内容 -->
+      <div class="news-content">{content}</div>
+    </div>
+  </body>
+</html>

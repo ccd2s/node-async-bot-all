@@ -3,17 +3,12 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 // koishi and plugin
-import { Context, FlatPick, Random, Time, sleep } from "koishi";
+import { Context, FlatPick, Random, Time, sleep, HTTP, Logger } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
-// node-async-bot-all types
-import { APINews } from "./commands.ts";
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from "steam-server-query";
-// @bbob/html preset-html5 ^4.3.1
-import bbobHTML from "@bbob/html";
-import presetHTML5 from "@bbob/preset-html5";
-// bing-translate-api ^4.2.0
-import { translate } from "bing-translate-api";
+// feedsmith ^2.9.4
+import { parseRssFeed } from "feedsmith";
 // minecraft-server-util ^5.4.4
 import { JavaStatusResponse, status } from "minecraft-server-util";
 
@@ -278,7 +273,7 @@ export async function request<T = any>(
 }
 
 // A2S
-export async function queryA2S(host: string, log: any): Promise<serverInfo> {
+export async function queryA2S(host: string, log: Logger): Promise<serverInfo> {
   try {
     // 查询
     const playerResponse = await queryGameServerInfo(host);
@@ -301,74 +296,47 @@ export async function queryA2S(host: string, log: any): Promise<serverInfo> {
   }
 }
 
-// 读取Steam新闻文件
-export async function readNewsFile(info: APINews, log: any): Promise<string[]> {
-  let html: string;
+// 解析 Steam 新闻并输出 Html
+export async function parseNewsRssToHtml(
+  rss: string,
+  log: Logger,
+  count?: number
+): Promise<{ data?: string; guid?: string; error?: any }> {
   try {
-    const aPath = path.resolve(__dirname, "..") + path.sep + "res" + path.sep + "slNews.html";
-    html = await fs.promises.readFile(aPath, "utf8");
-    // 翻译
-    const content = info.appnews.newsitems[0].contents
-      .replace("[spoiler]", "")
-      .replace("[/spoiler]", "")
-      .replace(/\r\n/g, "\n") // 统一换行符
-      .replace(/\n{3,}/g, "\n\n") // 多个换行压缩
-      .split("\n\n")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    // 原文+翻译
-    const bilingualParagraphs: string[] = [];
-    for (const paragraph of content) {
-      const zh = await translateAPI(log, paragraph);
-      bilingualParagraphs.push(
-        paragraph,
-        zh,
-        "" // 空行用于分隔段落
-      );
-    }
-    // 还原为 string
-    const finalText = bilingualParagraphs.join("<br />").replace(/<br \/>{2,}/g, "<br />");
-    // bbcode 转 html
-    const contentHtml = bbobHTML(finalText, presetHTML5());
-    // Steam 给的时间戳是秒级别的，得补3个0才正常
-    const date = Number(info.appnews.newsitems[0].date + "000");
-    // 替换
-    html = html
-      .toString()
-      .replace("{date}", new Date(date).toLocaleString())
-      .replace("{title}", info.appnews.newsitems[0].title)
-      .replace("{content}", contentHtml);
+    const aPath = path.resolve(__dirname, "..") + path.sep + "res" + path.sep + "steamNews.html";
+    let html = await fs.promises.readFile(aPath, "utf8");
+
+    const content = parseRssFeed(rss);
+    if (!content?.items) return { error: new Error("响应不正确") };
+
+    const item = content.items[count ?? 0];
+    if (!item || !item.guid) return { error: new Error("文章不存在") };
+
+    if (item.enclosures && item.enclosures[0] && item.enclosures[0].url)
+      html = html
+        .replace("<!--!", "")
+        .replace("!!-->", "")
+        .replace("{imgUrl}", item.enclosures[0].url);
+
+    return {
+      data: html
+        .replace("{date}", new Date(item.pubDate ?? 0).toLocaleString())
+        .replace("{title}", item.title ?? "无")
+        .replace("{content}", item.description ?? "无"),
+      guid: item.guid?.value
+    };
   } catch (error) {
     log.error(error);
     log.error(error.message);
-    return [error, error.message];
+    return { error };
   }
-  return [html];
-}
-
-/**
- * 翻译 API
- */
-export async function translateAPI(log: any, text: string): Promise<string> {
-  // 随机间隔
-  const ms = random(0, 0, 250);
-  await sleep(ms);
-  // 翻译
-  await translate(text, "en", "zh-Hans")
-    .then((result) => {
-      text = result?.translation as string;
-    })
-    .catch((err) => {
-      log.error(err);
-    });
-  return text;
 }
 
 /**
  * Minecraft SLP
  */
 export async function slpInfo(
-  log: any,
+  log: Logger,
   host: string,
   port: number,
   timeout?: number

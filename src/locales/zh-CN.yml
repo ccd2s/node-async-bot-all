@@ -222,8 +222,8 @@ commands:
       null: 未引用任何消息。
       matroska: |-
         {quote}禁止套娃！
-  slnews:
-    description: 抓取 NorthWood 的 Steam 最新新闻。
+  steamnews:
+    description: 抓取 Steam 游戏的最新新闻。
   use:
     description: 使用 TA ！
     usage: |-
