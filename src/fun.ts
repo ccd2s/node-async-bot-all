@@ -12,10 +12,14 @@ import { parseRssFeed } from "feedsmith";
 // minecraft-server-util ^5.4.4
 import { JavaStatusResponse, status } from "minecraft-server-util";
 
-// HTTP 请求类型
-export type HttpResponse<T> =
+/**
+ * HTTP 请求类型
+ */
+export type HttpResponse<T, E> =
   | { success: true; data: T }
-  | { success: false; error: any; code?: number; isJson: boolean };
+  | { success: false; error: string; code: number; isObj: false; isError: false }
+  | { success: false; error: E; code: number; isObj: true; isError: false }
+  | { success: false; error: { name: string; message: string }; isError: true };
 
 // A2S 类型
 export type serverInfo =
@@ -211,46 +215,53 @@ export function random(type: number = 0, data: number | number[], data2?: number
 /**
  * HTTP 请求
  * @param url 请求地址
+ * @param ctx {Context}
  * @param options fetch 选项 (method, headers, body 等)
- * @param timeout 超时时间 (默认 8000ms)
- * @param log 日志
+ * @param logger 日志
  */
-export async function request<T = any>(
+export async function request<T = any, E = any>(
   url: string,
-  options: RequestInit = {},
-  timeout: number = 8000,
-  log?: any
-): Promise<HttpResponse<T>> {
-  // 原生超时信号
-  const signal = AbortSignal.timeout(timeout);
+  ctx: Context,
+  options: HTTP.RequestConfig = { method: "GET", timeout: 8000 },
+  logger?: Logger
+): Promise<HttpResponse<T, E>> {
+  const log: Logger = logger ?? ctx.logger("http");
 
   try {
-    const response = await fetch(url, { ...options, signal });
+    const response = await ctx.http(url, options);
 
-    // 尝试解析 JSON，如果解析失败则保留文本
-    let responseData: any;
-    let isJson: boolean;
-    const text = await response.text();
+    let responseData: unknown;
+    let isObj: boolean;
+    const text = await response.data;
     try {
       responseData = JSON.parse(text);
-      isJson = true;
+      isObj = true;
     } catch {
       responseData = text; // 如果不是 JSON，就返回纯文本
-      isJson = false;
+      isObj = false;
     }
 
     // 处理 HTTP 错误状态 (如 404, 500)
-    if (!response.ok) {
-      log?.error(`HTTP Error ${response.status}: ${url}`, responseData);
-      return {
-        success: false,
-        code: response.status,
-        error: responseData || `HTTP ${response.status}`,
-        isJson: isJson
-      };
+    if (response.status !== 200) {
+      log.error(`HTTP Error ${response.status}: ${url}`, responseData);
+      return isObj
+        ? {
+            success: false,
+            code: response.status,
+            error: responseData as E,
+            isObj: true,
+            isError: false
+          }
+        : {
+            success: false,
+            code: response.status,
+            error: (responseData as string) ?? `HTTP ${response.status}`,
+            isObj: false,
+            isError: false
+          };
     }
 
-    log?.info(`HTTP ${response.status}: ${url}`);
+    log.info(`HTTP ${response.status}: ${url}`);
     // 请求成功
     return {
       success: true,
@@ -258,16 +269,18 @@ export async function request<T = any>(
     };
   } catch (error: any) {
     // 处理网络错误或超时
-    const isTimeout = error.name === "TimeoutError" || error.name === "AbortError";
-    const errorMessage = isTimeout ? `请求超时。(${timeout}ms)` : error.message;
+    const { name, message } =
+      error instanceof Error ? error : { name: "UnknownError", message: "unknown message" };
 
-    log?.error(url);
-    log?.error(`Request Failed: ${errorMessage}`);
+    const isTimeout = name === "TimeoutError" || name === "AbortError";
+    const errorMessage = isTimeout ? `请求超时。(${options?.timeout}ms)` : message;
 
+    log.error(url);
+    log.error(`Request Failed:`, error);
     return {
       success: false,
-      error: { name: error.name, message: errorMessage },
-      isJson: false
+      error: { name, message: errorMessage },
+      isError: true
     };
   }
 }
