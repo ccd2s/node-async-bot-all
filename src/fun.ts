@@ -168,7 +168,7 @@ export function formatTimestampDiff(start: number, end: number): string {
 }
 
 // 计算收发消息数量
-export async function getMsgCount(ctx: Context): Promise<object> {
+export async function getMsgCount(ctx: Context): Promise<{ receive: number, send: number }> {
   // 从数据库中获取
   const array = await ctx.database.get("analytics.message", { date: Time.getDateNumber() - 1 }, [
     "type",

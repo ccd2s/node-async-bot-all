@@ -266,7 +266,7 @@ export class CommandHandler {
           Number((await ctx.database.get("botData", "uptime"))[0].data),
           Number(session.event.timestamp.toString().substring(0, 10))
         ),
-        msgCount: `${msgCount["receive"]}/${msgCount["send"]}`,
+        msgCount: `${msgCount.receive}/${msgCount.send}`,
         version: (await ctx.database.get("botData", "version"))[0].data,
         success: 0
       };

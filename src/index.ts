@@ -191,9 +191,6 @@ export class NodeAsyncBot {
             this.ctx.config.steamNews,
             `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`
           );
-        } else {
-          // 请求失败
-          await this.ctx.broadcast(this.ctx.config.steamNews, outMsg.msg);
         }
       }
     });
