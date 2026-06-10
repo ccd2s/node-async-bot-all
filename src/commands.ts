@@ -263,7 +263,7 @@ export class CommandHandler {
         cpu: vMsg.cpu,
         memory: vMsg.memory,
         online: fun.formatTimestampDiff(
-          Number(botData.uptime),
+          Number((await ctx.database.get("botData", "uptime"))[0].data),
           Number(session.event.timestamp.toString().substring(0, 10))
         ),
         msgCount: `${msgCount.receive}/${msgCount.send}`,

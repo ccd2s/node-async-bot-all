@@ -79,8 +79,7 @@ export class NodeAsyncBot {
 
   public async init(ct: Context): Promise<void> {
     this.ctx = ct;
-    const vUptime = (await this.ctx.database.get("botData", "uptime"))[0];
-    const date = vUptime ? vUptime.data : new Date().getTime().toString().substring(0, 10);
+    const date = new Date().getTime().toString().substring(0, 10);
     this.botData = {
       version,
       uptime: date
@@ -205,7 +204,7 @@ export class NodeAsyncBot {
           session.text("cat", {
             name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
             time: fun.formatTimestampDiff(
-              Number(this.botData.uptime),
+              Number((await this.ctx.database.get("botData", "uptime"))[0].data),
               Number(session.event.timestamp.toString().substring(0, 10))
             ),
             version: this.botData.version,
