@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-node-async-bot-all",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "NodeAsync Bot插件（自用）",
   "keywords": [
     "chatbot",
