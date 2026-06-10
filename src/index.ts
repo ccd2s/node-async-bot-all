@@ -200,6 +200,7 @@ export class NodeAsyncBot {
       const match = session.content.match(/^#([a-zA-Z0-9]+)cat$/);
       if (match) {
         const system = await fun.getSystemUsage();
+        const info = await fun.readInfo(this.ctx);
         await session.send(
           session.text("cat", {
             name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
@@ -208,7 +209,8 @@ export class NodeAsyncBot {
               Number(session.event.timestamp.toString().substring(0, 10))
             ),
             version: this.botData.version,
-            platform: system.success == 1 ? "未知" : system.name
+            platform: system.success == 1 ? "未知" : system.name,
+            koishiVersion: typeof info === "string" ? "未知" : info.koishiVersion
           })
         );
       }
@@ -266,7 +268,7 @@ export class NodeAsyncBot {
       });
     this.na.subcommand("info").action(async ({ session }) => {
       await this.execCommand(session as Session, "info", async (handler) => {
-        const info = await handler.info();
+        const info = await handler.info(this.botData);
         await session?.send(
           session?.bot.adapterName == "qq"
             ? h("qq:markdown", {

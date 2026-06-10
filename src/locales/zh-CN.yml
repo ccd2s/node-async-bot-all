@@ -11,6 +11,7 @@ cat: |-
   {name}Cat 信息
   版本: {version}
   平台: {platform}
+  Koishi 版本：{koishiVersion}
   运行时间: {time}
 commands:
   na:

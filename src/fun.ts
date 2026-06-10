@@ -35,7 +35,7 @@ export type serverInfo =
 
 // 获取系统名称
 function getSystemName(): string {
-  return os.type() + " " + os.release();
+  return os.type() + " " + os.release() + " (" + os.arch() + ")";
 }
 
 // 获取内存使用率
@@ -141,11 +141,10 @@ export function getHongKongTime(): string {
 // 读取信息文件
 export async function readInfo(
   ctx: Context
-): Promise<{ version: string; koishiVersion: string; nodeVersion: string } | string> {
+): Promise<{ koishiVersion: string; nodeVersion: string } | string> {
   try {
     const deps = await ctx.installer.getDeps();
     return {
-      version: (await ctx.database.get("botData", "version"))[0].data,
       koishiVersion: deps.koishi.resolved as string,
       nodeVersion: process.versions.node
     };

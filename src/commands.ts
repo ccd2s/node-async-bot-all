@@ -299,7 +299,7 @@ export class CommandHandler {
   }
 
   // 指令 Info
-  async info(): Promise<object> {
+  async info(botData: botDataType): Promise<object> {
     const { ctx, session, log, time } = this;
     let msg: object;
     let data = await fun.readInfo(ctx);
@@ -316,6 +316,7 @@ export class CommandHandler {
       msg = {
         time: time,
         ...data,
+        version: botData.version,
         success: 0
       };
     }
