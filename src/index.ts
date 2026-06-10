@@ -79,10 +79,11 @@ export class NodeAsyncBot {
 
   public async init(ct: Context): Promise<void> {
     this.ctx = ct;
-    const date = new Date();
+    const vUptime = (await this.ctx.database.get("botData", "uptime"))[0];
+    const date = vUptime ? vUptime.data : new Date().getTime().toString().substring(0, 10);
     this.botData = {
       version,
-      uptime: date.getTime().toString().substring(0, 10)
+      uptime: date
     };
     // 数据库表
     this.ctx.model.extend("botData", {
@@ -195,9 +196,26 @@ export class NodeAsyncBot {
       }
     });
     this.ctx.on("message", async (session) => {
+      if (!session.content?.length || session.content?.length > 50) return;
+      const ctt = session.content.toLowerCase();
+      const match = session.content.match(/^#([a-zA-Z0-9]+)cat$/);
+      if (match) {
+        const system = await fun.getSystemUsage();
+        await session.send(
+          session.text("cat", {
+            name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
+            time: fun.formatTimestampDiff(
+              Number(this.botData.uptime),
+              Number(session.event.timestamp.toString().substring(0, 10))
+            ),
+            version: this.botData.version,
+            platform: system.success == 1 ? "未知" : system.name
+          })
+        );
+      }
       if (session.bot.createReaction) {
         for (const content of this.ctx.config.specialMsg) {
-          if (session.content === content) {
+          if (ctt === content) {
             await session.bot.createReaction(
               session.channelId as string,
               session.messageId as string,

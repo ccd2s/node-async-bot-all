@@ -7,6 +7,11 @@ failed: |-
 failed-md: |-
   **{time}**
   {error}
+cat: |-
+  {name}Cat 信息
+  版本: {version}
+  平台: {platform}
+  运行时间: {time}
 commands:
   na:
     description: NodeAsync Bot
