@@ -4,7 +4,7 @@ import { Installer } from "@koishijs/plugin-market";
 import Puppeteer from "koishi-plugin-puppeteer";
 // node-async-bot-all
 import * as fun from "./fun.ts";
-import { ConfigCxV3 } from "./config.ts";
+import { botDataType, ConfigCxV3 } from "./config.ts";
 
 // 类型声明
 declare module "koishi" {
@@ -242,15 +242,15 @@ export class CommandHandler {
   }
 
   // 指令 Status
-  async status(): Promise<object> {
+  async status(botData: botDataType): Promise<object> {
     const { ctx, session, log, time } = this;
     let msg: object;
     const vMsg = await fun.getSystemUsage();
-    if (vMsg["success"] == 1) {
+    if (vMsg.success == 1) {
       log.error(vMsg);
       msg = {
         time: time,
-        data: vMsg["data"],
+        data: vMsg.data,
         error: session.text(".error"),
         quote: h.quote(session.messageId),
         success: 1
@@ -259,15 +259,15 @@ export class CommandHandler {
       const msgCount = await fun.getMsgCount(ctx);
       msg = {
         time: time,
-        name: vMsg["name"],
-        cpu: vMsg["cpu"],
-        memory: vMsg["memory"],
+        name: vMsg.name,
+        cpu: vMsg.cpu,
+        memory: vMsg.memory,
         online: fun.formatTimestampDiff(
-          Number((await ctx.database.get("botData", "uptime"))[0].data),
+          Number(botData.uptime),
           Number(session.event.timestamp.toString().substring(0, 10))
         ),
         msgCount: `${msgCount.receive}/${msgCount.send}`,
-        version: (await ctx.database.get("botData", "version"))[0].data,
+        version: botData.version,
         success: 0
       };
     }

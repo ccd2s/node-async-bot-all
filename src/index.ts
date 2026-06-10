@@ -239,7 +239,7 @@ export class NodeAsyncBot {
       .alias("状态")
       .action(async ({ session }) => {
         await this.execCommand(session as Session, "status", async (handler) => {
-          const status = await handler.status();
+          const status = await handler.status(this.botData);
           await session?.send(
             session?.bot.adapterName == "qq"
               ? h("qq:markdown", {
