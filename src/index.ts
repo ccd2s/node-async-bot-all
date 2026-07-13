@@ -81,11 +81,14 @@ export class NodeAsyncBot {
     this.ctx = ct;
     const date = new Date().getTime().toString().substring(0, 10);
     const info = await fun.readInfo(this.ctx);
+    const impl: implInfo =
+      this.ctx.bots[0].adapterName == "milky" ? await this.ctx.bots[0].internal.getImplInfo() : {};
     this.botData = {
       version,
       uptime: date,
       koishiVersion: typeof info === "string" ? "未知" : info.koishiVersion,
-      nodeVersion: typeof info === "string" ? "未知" : info.nodeVersion
+      nodeVersion: typeof info === "string" ? "未知" : info.nodeVersion,
+      impl
     };
     // 数据库表
     this.ctx.model.extend("botData", {
@@ -203,8 +206,6 @@ export class NodeAsyncBot {
       const match = session.content.match(/^#([a-zA-Z0-9]+)cat$/);
       if (match) {
         const system = await fun.getSystemUsage();
-        const impl: implInfo =
-          session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
         await session.send(
           session.text("cat", {
             name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
@@ -215,10 +216,10 @@ export class NodeAsyncBot {
             version: this.botData.version,
             platform: system.success == 1 ? "未知" : system.name,
             koishiVersion: this.botData.koishiVersion,
-            implName: impl.impl_name,
-            implVersion: impl.impl_version,
-            qqProtocolType: impl.qq_protocol_type,
-            qqProtocolVersion: impl.qq_protocol_version
+            implName: this.botData.impl.impl_name,
+            implVersion: this.botData.impl.impl_version,
+            qqProtocolType: this.botData.impl.qq_protocol_type,
+            qqProtocolVersion: this.botData.impl.qq_protocol_version
           })
         );
       }

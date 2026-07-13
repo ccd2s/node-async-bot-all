@@ -4,7 +4,7 @@ import { Installer } from "@koishijs/plugin-market";
 import Puppeteer from "koishi-plugin-puppeteer";
 // node-async-bot-all
 import * as fun from "./fun.ts";
-import { botDataType, ConfigCxV3, implInfo } from "./config.ts";
+import { botDataType, ConfigCxV3 } from "./config.ts";
 
 // 类型声明
 declare module "koishi" {
@@ -246,8 +246,6 @@ export class CommandHandler {
     const { ctx, session, log, time } = this;
     let msg: object;
     const vMsg = await fun.getSystemUsage();
-    const impl: implInfo =
-      session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
     if (vMsg.success == 1) {
       log.error(vMsg);
       msg = {
@@ -271,10 +269,10 @@ export class CommandHandler {
         msgCount: `${msgCount.receive}/${msgCount.send}`,
         version: botData.version,
         koishiVersion: botData.koishiVersion,
-        implName: impl.impl_name,
-        implVersion: impl.impl_version,
-        qqProtocolType: impl.qq_protocol_type,
-        qqProtocolVersion: impl.qq_protocol_version,
+        implName: botData.impl.impl_name,
+        implVersion: botData.impl.impl_version,
+        qqProtocolType: botData.impl.qq_protocol_type,
+        qqProtocolVersion: botData.impl.qq_protocol_version,
         success: 0
       };
     }
@@ -307,18 +305,16 @@ export class CommandHandler {
 
   // 指令 Info
   async info(botData: botDataType): Promise<object> {
-    const { session, log, time } = this;
+    const { log, time } = this;
     let msg: object;
-    const impl: implInfo =
-      session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
     msg = {
       time: time,
       nodeVersion: botData.nodeVersion,
       koishiVersion: botData.koishiVersion,
-      implName: impl.impl_name,
-      implVersion: impl.impl_version,
-      qqProtocolType: impl.qq_protocol_type,
-      qqProtocolVersion: impl.qq_protocol_version,
+      implName: botData.impl.impl_name,
+      implVersion: botData.impl.impl_version,
+      qqProtocolType: botData.impl.qq_protocol_type,
+      qqProtocolVersion: botData.impl.qq_protocol_version,
       version: botData.version,
       success: 0
     };

@@ -45,6 +45,7 @@ export interface botDataType {
   version: string;
   koishiVersion: string;
   nodeVersion: string;
+  impl: implInfo;
 }
 
 export interface implInfo {
