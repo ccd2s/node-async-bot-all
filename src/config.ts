@@ -43,6 +43,16 @@ export interface botDataTables {
 export interface botDataType {
   uptime: string;
   version: string;
+  koishiVersion: string;
+  nodeVersion: string;
+}
+
+export interface implInfo {
+  impl_name?: string;
+  impl_version?: string;
+  qq_protocol_version?: string;
+  qq_protocol_type?: string;
+  milky_version?: string;
 }
 
 // 配置项

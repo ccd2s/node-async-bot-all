@@ -8,10 +8,11 @@ failed-md: |-
   **{time}**
   {error}
 cat: |-
-  {name}Cat 信息
-  版本: {version}
-  平台: {platform}
+  --- {name}Cat 信息 ---
+  运行平台: {platform}
+  机器人版本: {version}
   Koishi 版本：{koishiVersion}
+  {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
   运行时间: {time}
 commands:
   na:
@@ -69,11 +70,13 @@ commands:
         {time}
         --- 系统状态 ---
         系统名称：{name}
-        CPU使用率：{cpu}
+        CPU 使用率：{cpu}
         内存使用率：{memory}
         --- 机器人状态 ---
         昨日收/发消息数量：{msgCount}
         机器人版本：{version}
+        Koishi 版本：{koishiVersion}
+        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
         运行时间：{online}
       msg-md: |-
         *{time}*
@@ -83,13 +86,14 @@ commands:
         ## 系统状态
 
         - 系统名称：{name}
-        - CPU使用率：{cpu}
+        - CPU 使用率：{cpu}
         - 内存使用率：{memory}
 
         ## 机器人状态
 
         - 昨日收/发消息数量：{msgCount}
         - 机器人版本：{version}
+        - Koishi 版本：{koishiVersion}
         - 运行时间：{online}
       error: 状态获取失败。
   random:
@@ -120,6 +124,7 @@ commands:
         --- 其他 ---
         Node.js 版本：{nodeVersion}
         Koishi 版本：{koishiVersion}
+        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
         开源地址：https://github.com/ccd2s/node-async-bot-all
         官网：https://www.tasaed.top
       msg-md: |-
@@ -141,7 +146,6 @@ commands:
         - Koishi 版本：{koishiVersion}
         - 开源地址：https://github.com/ccd2s/node-async-bot-all
         - 官网：https://www.tasaed.top
-      error: 读取信息失败。
   rw:
     description: 随机名言名句。
     messages:

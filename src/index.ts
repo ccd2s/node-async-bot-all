@@ -3,7 +3,7 @@ import { Context, Session, h, Command } from "koishi";
 // node-async-bot-all
 import { CommandHandler } from "./commands.ts";
 import * as fun from "./fun.ts";
-import { botDataTables, botDataType } from "./config.ts";
+import { botDataTables, botDataType, implInfo } from "./config.ts";
 import { version } from "../package.json";
 
 // 在上下文中注入
@@ -80,9 +80,12 @@ export class NodeAsyncBot {
   public async init(ct: Context): Promise<void> {
     this.ctx = ct;
     const date = new Date().getTime().toString().substring(0, 10);
+    const info = await fun.readInfo(this.ctx);
     this.botData = {
       version,
-      uptime: date
+      uptime: date,
+      koishiVersion: typeof info === "string" ? "未知" : info.koishiVersion,
+      nodeVersion: typeof info === "string" ? "未知" : info.nodeVersion
     };
     // 数据库表
     this.ctx.model.extend("botData", {
@@ -200,17 +203,22 @@ export class NodeAsyncBot {
       const match = session.content.match(/^#([a-zA-Z0-9]+)cat$/);
       if (match) {
         const system = await fun.getSystemUsage();
-        const info = await fun.readInfo(this.ctx);
+        const impl: implInfo =
+          session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
         await session.send(
           session.text("cat", {
             name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
             time: fun.formatTimestampDiff(
-              Number((await this.ctx.database.get("botData", "uptime"))[0].data),
+              Number(this.botData.uptime),
               Number(session.event.timestamp.toString().substring(0, 10))
             ),
             version: this.botData.version,
             platform: system.success == 1 ? "未知" : system.name,
-            koishiVersion: typeof info === "string" ? "未知" : info.koishiVersion
+            koishiVersion: this.botData.koishiVersion,
+            implName: impl.impl_name,
+            implVersion: impl.impl_version,
+            qqProtocolType: impl.qq_protocol_type,
+            qqProtocolVersion: impl.qq_protocol_version
           })
         );
       }
@@ -272,11 +280,11 @@ export class NodeAsyncBot {
         await session?.send(
           session?.bot.adapterName == "qq"
             ? h("qq:markdown", {
-                content: session?.text(info["success"] == 0 ? ".msg-md" : "failed-md", info)
+                content: session?.text(".msg-md", info)
               })
-            : session?.text(info["success"] == 0 ? ".msg" : "failed", info)
+            : session?.text(".msg", info)
         );
-        return info["success"] == 0 ? 0 : 1;
+        return 0;
       });
     });
     this.na.subcommand("rw").action(async ({ session }) => {

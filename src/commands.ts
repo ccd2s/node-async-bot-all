@@ -4,7 +4,7 @@ import { Installer } from "@koishijs/plugin-market";
 import Puppeteer from "koishi-plugin-puppeteer";
 // node-async-bot-all
 import * as fun from "./fun.ts";
-import { botDataType, ConfigCxV3 } from "./config.ts";
+import { botDataType, ConfigCxV3, implInfo } from "./config.ts";
 
 // 类型声明
 declare module "koishi" {
@@ -246,6 +246,8 @@ export class CommandHandler {
     const { ctx, session, log, time } = this;
     let msg: object;
     const vMsg = await fun.getSystemUsage();
+    const impl: implInfo =
+      session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
     if (vMsg.success == 1) {
       log.error(vMsg);
       msg = {
@@ -263,11 +265,16 @@ export class CommandHandler {
         cpu: vMsg.cpu,
         memory: vMsg.memory,
         online: fun.formatTimestampDiff(
-          Number((await ctx.database.get("botData", "uptime"))[0].data),
+          Number(botData.uptime),
           Number(session.event.timestamp.toString().substring(0, 10))
         ),
         msgCount: `${msgCount.receive}/${msgCount.send}`,
         version: botData.version,
+        koishiVersion: botData.koishiVersion,
+        implName: impl.impl_name,
+        implVersion: impl.impl_version,
+        qqProtocolType: impl.qq_protocol_type,
+        qqProtocolVersion: impl.qq_protocol_version,
         success: 0
       };
     }
@@ -300,26 +307,21 @@ export class CommandHandler {
 
   // 指令 Info
   async info(botData: botDataType): Promise<object> {
-    const { ctx, session, log, time } = this;
+    const { session, log, time } = this;
     let msg: object;
-    let data = await fun.readInfo(ctx);
-    if (typeof data == "string") {
-      log.error("Error:", data);
-      msg = {
-        time: time,
-        data: data,
-        error: session.text(".error"),
-        quote: h.quote(session.messageId),
-        success: 1
-      };
-    } else {
-      msg = {
-        time: time,
-        ...data,
-        version: botData.version,
-        success: 0
-      };
-    }
+    const impl: implInfo =
+      session?.bot.adapterName == "milky" ? await session.bot.internal.getImplInfo() : {};
+    msg = {
+      time: time,
+      nodeVersion: botData.nodeVersion,
+      koishiVersion: botData.koishiVersion,
+      implName: impl.impl_name,
+      implVersion: impl.impl_version,
+      qqProtocolType: impl.qq_protocol_type,
+      qqProtocolVersion: impl.qq_protocol_version,
+      version: botData.version,
+      success: 0
+    };
     log.debug("Sent:");
     log.debug(msg);
     return msg;
