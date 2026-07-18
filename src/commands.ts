@@ -335,10 +335,7 @@ export class CommandHandler {
     }
   }
 
-  static async handleCatMessage(
-    session: Session,
-    botData: botDataType
-  ): Promise<void> {
+  static async handleCatMessage(session: Session, botData: botDataType): Promise<void> {
     const match = session.content?.match(/^#([a-zA-Z0-9]+)cat$/);
     if (!match) return;
 
