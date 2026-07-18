@@ -148,12 +148,11 @@ export class NodeAsyncBot {
   private async execCommand(
     session: Session,
     loggerName: string,
-    fn: (handler: CommandHandler) => Promise<number | void>
+    fn: (handler: CommandHandler) => Promise<boolean>
   ): Promise<void> {
     const handler = new CommandHandler(this.ctx, session, loggerName);
     await this.startReaction(session);
-    const result = await fn(handler);
-    if (result === 0 || result === undefined) {
+    if (await fn(handler)) {
       await this.endReaction(session);
     } else {
       await this.endReactionFailed(session);
@@ -165,16 +164,7 @@ export class NodeAsyncBot {
     this._registeredNews = true;
     // sl 新闻 定时任务与指令
     this.na.subcommand("steamNews").action(async ({ session }) => {
-      const log = this.ctx.logger("steamNews");
-      const results = await CommandHandler.getNewsMsg(this.ctx, 1);
-      for (const outMsg of results) {
-        if (outMsg.data) {
-          await (session as Session)?.send(`${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`);
-        } else {
-          log.error(outMsg);
-          await (session as Session)?.send(outMsg.msg);
-        }
-      }
+      await CommandHandler.sendNews(this.ctx, session as Session);
     });
     // 每小时0分
     this.ctx.cron("0 * * * *", async () => {
@@ -187,42 +177,12 @@ export class NodeAsyncBot {
     });
     // 事件监听
     this.ctx.on("node-async/news", async () => {
-      // 获取新闻
-      const results = await CommandHandler.getNewsMsg(this.ctx, 0);
-      if (results.length === 0) return;
-      for (const outMsg of results) {
-        if (outMsg.data) {
-          // 发现新的新闻！
-          await this.ctx.broadcast(
-            this.ctx.config.steamNews,
-            `${outMsg.msg}\n${h.image(outMsg.data, "image/png")}`
-          );
-        }
-      }
+      await CommandHandler.broadcastNews(this.ctx);
     });
     this.ctx.on("message", async (session) => {
       if (!session.content?.length || session.content?.length > 50) return;
       const ctt = session.content.toLowerCase();
-      const match = session.content.match(/^#([a-zA-Z0-9]+)cat$/);
-      if (match) {
-        const system = await fun.getSystemUsage();
-        await session.send(
-          session.text("cat", {
-            name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
-            time: fun.formatTimestampDiff(
-              Number(this.botData.uptime),
-              Number(session.event.timestamp.toString().substring(0, 10))
-            ),
-            version: this.botData.version,
-            platform: system.success == 1 ? "未知" : system.name,
-            koishiVersion: this.botData.koishiVersion,
-            implName: this.botData.impl.impl_name,
-            implVersion: this.botData.impl.impl_version,
-            qqProtocolType: this.botData.impl.qq_protocol_type,
-            qqProtocolVersion: this.botData.impl.qq_protocol_version
-          })
-        );
-      }
+      await CommandHandler.handleCatMessage(session, this.botData);
       if (session.bot.createReaction) {
         for (const content of this.ctx.config.specialMsg) {
           if (ctt === content) {
@@ -248,55 +208,19 @@ export class NodeAsyncBot {
       .alias("stats")
       .alias("状态")
       .action(async ({ session }) => {
-        await this.execCommand(session as Session, "status", async (handler) => {
-          const status = await handler.status(this.botData);
-          await session?.send(
-            session?.bot.adapterName == "qq"
-              ? h("qq:markdown", {
-                  content: session?.text(status["success"] == 0 ? ".msg-md" : "failed-md", status)
-                })
-              : session?.text(status["success"] == 0 ? ".msg" : "failed", status)
-          );
-          return status["success"] == 0 ? 0 : 1;
-        });
+        await this.execCommand(session as Session, "status", (handler) =>
+          handler.status(this.botData)
+        );
       });
     this.na
       .subcommand("random [最小数:number] [最大数:number]")
       .alias("随机数")
       .action(async ({ session }, min, max) => {
-        await this.execCommand(session as Session, "random", async (handler) => {
-          const random = await handler.random(min, max);
-          await session?.send(
-            session?.bot.adapterName == "qq"
-              ? h("qq:markdown", {
-                  content: session?.text(".msg-md", random)
-                })
-              : session?.text(".msg", random)
-          );
-        });
+        await this.execCommand(session as Session, "random", (handler) => handler.random(min, max));
       });
     this.na.subcommand("info").action(async ({ session }) => {
       await this.execCommand(session as Session, "info", (handler) => handler.info(this.botData));
     });
-    this.na.subcommand("rw").action(async ({ session }) => {
-      await this.execCommand(session as Session, "rw", async (handler) => {
-        const rw = await handler.randomWord();
-        await session?.send(
-          session?.bot.adapterName == "qq"
-            ? h("qq:markdown", {
-                content: session?.text(rw["success"] == 0 ? "failed-md" : "failed-md", rw)
-              })
-            : session?.text(rw["success"] == 0 ? "failed" : "failed", rw)
-        );
-        return rw["success"] == 0 ? 0 : 1;
-      });
-    });
-    this.na
-      .subcommand("randomBA")
-      .alias("随机ba图")
-      .action(async ({ session }) => {
-        await this.execCommand(session as Session, "ba", (handler) => handler.blueArchive());
-      });
     // this.na
     //   .subcommand('centerServerTest')
     //   .alias('测测中心服务器')

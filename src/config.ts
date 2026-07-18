@@ -24,12 +24,9 @@ interface ConfigV2SteamNews {
 // 配置项类型定义
 export interface ConfigType {
   cxV3: Array<ConfigCxV3>;
-  rwAPI: string;
   htmlTimeout: number;
   timeout: number;
-  baAPI: string[];
   newsAPI: Array<ConfigV2SteamNews>;
-  catAPI: string;
   steamNews: string[];
   specialMsg: string[];
   reactionId: number[];
@@ -78,19 +75,6 @@ export const Config: Schema<ConfigType> = Schema.intersect([
       .default([])
       .description("查询的群")
   }).description("查询"),
-  Schema.object({
-    rwAPI: Schema.string().default("https://api.tasaed.top/rw/").description("随机文本 API")
-  }).description("随机文本"),
-  Schema.object({
-    baAPI: Schema.array(String)
-      .default(["https://rba.kanostar.top/portrait"])
-      .description("随机BA图 API")
-  }).description("随机BA图"),
-  Schema.object({
-    catAPI: Schema.string()
-      .default("https://api.thecatapi.com/v1/images/search")
-      .description("随机猫猫图 API")
-  }).description("随机猫猫图"),
   Schema.object({
     steamNews: Schema.array(String).default([""]).description("{platform}:{channelId}"),
     newsAPI: Schema.array(

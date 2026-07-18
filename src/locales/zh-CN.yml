@@ -146,14 +146,6 @@ commands:
         - Koishi 版本：{koishiVersion}
         - 开源地址：https://github.com/ccd2s/node-async-bot-all
         - 官网：https://www.tasaed.top
-  rw:
-    description: 随机名言名句。
-    messages:
-  randomba:
-    description: 随机BA图。
-    messages:
-      msg: |-
-        {quote}{image}
   centerservertest:
     description: 查看中心服务器状态。
     messages:
@@ -185,28 +177,6 @@ commands:
       statusLive: ✅ 正常
       statusDie: ❌ 故障
       dataFail: 未能获取到此服务器的状态信息。
-  meme:
-    description: 群友的怪话！
-    usage: |-
-      不带参数时随机查看
-      带参数时为查看指定 meme
-    examples: |-
-      meme
-      meme 1145
-    messages:
-      msg: |-
-        {quote}{time}
-        {image}
-        {title}
-      msg-qq: |-
-        {quote}{image}
-        {time}
-        {title}
-  randomcat:
-    description: 随机猫猫图。
-    messages:
-      msg: |-
-        {quote}{image}
   getqqinfo:
     description: 获取 QQ 号的信息。
     usage: |-
@@ -234,12 +204,3 @@ commands:
         {quote}禁止套娃！
   steamnews:
     description: 抓取 Steam 游戏的最新新闻。
-  use:
-    description: 使用 TA ！
-    usage: |-
-      use @用户
-    examples: use @用户
-    messages:
-      command: 请 @ 一个用户。
-      msg: |-
-        {at} {desc}了 {at2} ！
