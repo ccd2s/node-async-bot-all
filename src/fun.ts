@@ -3,7 +3,7 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 // koishi and plugin
-import { Context, FlatPick, Random, Time, sleep, HTTP, Logger } from "koishi";
+import { Context, FlatPick, Time, sleep, HTTP, Logger } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from "steam-server-query";
@@ -186,29 +186,6 @@ export async function getMsgCount(ctx: Context): Promise<{ receive: number; send
     }
   });
   return { receive: receive, send: send };
-}
-
-/** Random
- * @param type
- * 0:int 1:real 2:pick
- * @param data
- * @param data2
- */
-export function random(type: number = 0, data: number | number[], data2?: number): number {
-  const random = new Random(() => Math.random());
-  switch (type) {
-    case 0:
-      if (typeof data != "number" || data2 == undefined) return 0;
-      return random.int(data, data2);
-    case 1:
-      if (typeof data != "number" || data2 == undefined) return 0;
-      return random.real(data, data2);
-    case 2:
-      if (typeof data != "object") return 0;
-      return random.pick(data);
-    default:
-      return 0;
-  }
 }
 
 /**

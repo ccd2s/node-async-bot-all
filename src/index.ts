@@ -1,5 +1,5 @@
 // koishi and plugin
-import { Context, Session, h, Command } from "koishi";
+import { Context, Session, Command, Random } from "koishi";
 // node-async-bot-all
 import { CommandHandler } from "./commands.ts";
 import * as fun from "./fun.ts";
@@ -229,7 +229,7 @@ export class NodeAsyncBot {
             await session.bot.createReaction(
               session.channelId as string,
               session.messageId as string,
-              `face|${String(fun.random(2, this.ctx.config.reactionId))}`
+              `face|${String(new Random(() => Math.random()).pick(this.ctx.config.reactionId))}`
             );
           }
         }
@@ -276,17 +276,7 @@ export class NodeAsyncBot {
         });
       });
     this.na.subcommand("info").action(async ({ session }) => {
-      await this.execCommand(session as Session, "info", async (handler) => {
-        const info = await handler.info(this.botData);
-        await session?.send(
-          session?.bot.adapterName == "qq"
-            ? h("qq:markdown", {
-                content: session?.text(".msg-md", info)
-              })
-            : session?.text(".msg", info)
-        );
-        return 0;
-      });
+      await this.execCommand(session as Session, "info", (handler) => handler.info(this.botData));
     });
     this.na.subcommand("rw").action(async ({ session }) => {
       await this.execCommand(session as Session, "rw", async (handler) => {
@@ -313,12 +303,5 @@ export class NodeAsyncBot {
     //   .action(async ({ session }) => {
     //     await this.execCommand(session as Session, 'centerServerTest', (handler) => handler.centerServerTest());
     //   });
-    this.na
-      .subcommand("randomCat")
-      .alias("随机猫猫图")
-      .alias("随机猫猫")
-      .action(async ({ session }) => {
-        await this.execCommand(session as Session, "cat", (handler) => handler.cat());
-      });
   }
 }
