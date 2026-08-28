@@ -257,7 +257,7 @@ export class CommandHandler {
         fullPage: true,
         omitBackground: true
       });
-      await session.send(h.image(image, "image/png"));
+      await session.send(`${h.quote(session.messageId)}${h.image(image, "image/png")}`);
       return true;
     } catch (err) {
       log.error(`图片渲染失败:`, err);
