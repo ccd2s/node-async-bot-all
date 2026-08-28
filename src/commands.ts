@@ -4,7 +4,7 @@ import { Installer } from "@koishijs/plugin-market";
 import Puppeteer from "koishi-plugin-puppeteer";
 // node-async-bot-all
 import * as fun from "./fun.ts";
-import { botDataType, ConfigCxV3 } from "./config.ts";
+import { botDataType, ConfigCxV3, ConfigV3Server } from "./config.ts";
 
 // 类型声明
 declare module "koishi" {
@@ -70,6 +70,17 @@ interface ContentProvenanceCheck {
   ];
 }
 
+export interface Servers {
+  status: string;
+  name: string;
+  ip: string;
+  online: string;
+  version: string;
+  players: string;
+  list: string[];
+  motd?: string;
+}
+
 // 指令处理类
 export class CommandHandler {
   private ctx: Context;
@@ -105,7 +116,7 @@ export class CommandHandler {
 
   // 指令 cx
   async server(): Promise<boolean> {
-    const { ctx, session, log, time, isQQ } = this;
+    const { ctx, session, log, time } = this;
     const config = ctx.config.cxV3.find((item: ConfigCxV3) => item.id === session.event.guild?.id);
     if (!config) {
       const data = { time, error: session.text(".forbidden") };
@@ -125,86 +136,136 @@ export class CommandHandler {
       return false;
     }
 
-    const entries = await Promise.all(
-      config.server.map(async ({ note, type, api }, index: number) => {
-        const count = index + 1;
-        if (type == "a2s") {
-          const info = await fun.queryA2S(api, log);
-          if (info.success) {
-            const data = {
-              count,
-              players: info.players,
-              version: info.version,
-              list: info.bots,
-              note: note ?? session.text("noop"),
-              name: "A2S",
-              ne: session.text(".ne-a2s")
+    const entries: Servers[] = await Promise.all(
+      config.server.map(
+        async ({ note, type, api }: ConfigV3Server, index: number): Promise<Servers> => {
+          const count = index + 1;
+          if (type == "a2s") {
+            const info = await fun.queryA2S(api, log);
+            if (info.success) {
+              const data: Servers = {
+                players: info.players,
+                ip: api,
+                online: "在线",
+                status: "online",
+                version: info.version,
+                list: [],
+                motd: info.name.substring(0, 30) + "...",
+                name: note ? `服务器 ${count} - ${note}` : `服务器 ${count}`
+              };
+              log.info(`Server ${count}:`);
+              log.info(data);
+              return data;
+            }
+
+            const error = info.error.toString().includes("Timeout reached")
+              ? session.text(".timeout")
+              : session.text("unknown");
+            const data: Servers = {
+              players: "-",
+              ip: api,
+              online: "离线",
+              status: "offline",
+              version: error,
+              list: [],
+              name: note ? `服务器 ${count} - ${note}` : `服务器 ${count}`
             };
-            log.debug(info);
-            log.info(`Server ${count}:`);
-            log.info(data);
-            return session.text(isQQ ? ".list-md" : ".list", data);
+            log.error(`Server ${count}:`);
+            log.error(data);
+            return data;
           }
 
-          const error = info.error.toString().includes("Timeout reached")
-            ? session.text(".timeout")
-            : session.text("unknown");
-          const data = { count, data: error, note, name: "A2S" };
+          const separator = api.lastIndexOf(":");
+          const host = separator === -1 ? api : api.slice(0, separator);
+          const port = separator === -1 ? NaN : Number(api.slice(separator + 1));
+          const serverInfo =
+            type == "bedrock"
+              ? await fun.bedrockPing(log, host, port, ctx.config.timeout)
+              : await fun.slpInfo(log, host, port, ctx.config.timeout);
+          if (serverInfo.success) {
+            const data: Servers = {
+              players: `${serverInfo.data.players.online} / ${serverInfo.data.players.max}`,
+              ip: api,
+              online: "在线",
+              status: "online",
+              version: serverInfo.data.version.name,
+              list:
+                serverInfo.type == "java"
+                  ? (serverInfo.data.players.sample?.map((item) => item.name) ?? [])
+                  : [],
+              motd: serverInfo.data.motd.html,
+              name: note ? `服务器 ${count} - ${note}` : `服务器 ${count}`
+            };
+            log.info(`Server ${count}:`);
+            log.info(data);
+            return data;
+          }
+
+          let error = serverInfo.data;
+          if (
+            error.includes("connect ECONNREFUSED") ||
+            error.includes("Server is offline or unreachable")
+          ) {
+            error = session.text(".close");
+          } else if (error.includes("connect EHOSTUNREACH")) {
+            error = session.text(".host");
+          } else if (error.includes("connect ETIMEDOUT")) {
+            error = session.text(".timeout");
+          } else if (
+            error.includes("Ping payload did not match received payload") ||
+            error.includes("Expected server to send packet type")
+          ) {
+            error = session.text(".fewData");
+          } else if (error.includes("getaddrinfo")) {
+            error = session.text(".dns");
+          }
+          const data: Servers = {
+            players: `-`,
+            ip: api,
+            online: "离线",
+            status: "offline",
+            version: error,
+            list: [],
+            name: note ? `服务器 ${count} - ${note}` : `服务器 ${count}`
+          };
           log.error(`Server ${count}:`);
           log.error(data);
-          return session.text(isQQ ? ".listFailed-md" : ".listFailed", data);
+          return data;
         }
-
-        const separator = api.lastIndexOf(":");
-        const host = separator === -1 ? api : api.slice(0, separator);
-        const port = separator === -1 ? NaN : Number(api.slice(separator + 1));
-        const serverInfo = await fun.slpInfo(log, host, port, ctx.config.timeout);
-        if (serverInfo.success) {
-          const data = {
-            count,
-            players: `${serverInfo.data.players.online}/${serverInfo.data.players.max}`,
-            version: serverInfo.data.version.name,
-            list: serverInfo.data.players.sample?.map((item) => item.name).join(", ") ?? "[]",
-            note: note ?? session.text("noop"),
-            ne: session.text(".ne-mc"),
-            name: "MC"
-          };
-          log.debug(serverInfo);
-          log.info(`Server ${count}:`);
-          log.info(data);
-          return session.text(isQQ ? ".list-md" : ".list", data);
-        }
-
-        let error = serverInfo.data;
-        if (
-          error.includes("connect ECONNREFUSED") ||
-          error.includes("Server is offline or unreachable")
-        ) {
-          error = session.text(".close");
-        } else if (error.includes("connect EHOSTUNREACH")) {
-          error = session.text(".host");
-        } else if (error.includes("connect ETIMEDOUT")) {
-          error = session.text(".timeout");
-        } else if (
-          error.includes("Ping payload did not match received payload") ||
-          error.includes("Expected server to send packet type")
-        ) {
-          error = session.text(".fewData");
-        } else if (error.includes("getaddrinfo")) {
-          error = session.text(".dns");
-        }
-        const data = { count, data: error, note, name: "MC" };
-        log.error(`Server ${count}:`);
-        log.error(data);
-        return session.text(isQQ ? ".listFailed-md" : ".listFailed", data);
-      })
+      )
     );
 
-    await this.sendMsg(isQQ ? ".msg-md" : ".msg", {
-      time,
-      list: entries.map((entry) => `\n${entry}`).join("")
-    });
-    return true;
+    const page = await ctx.puppeteer.page();
+    try {
+      await page.setViewport({
+        width: 864,
+        height: 800,
+        deviceScaleFactor: 2
+      });
+      const html = fun.getServerCardHtml(entries, time);
+      await page.setContent(html, {
+        timeout: ctx.config.htmlTimeout,
+        waitUntil: "networkidle0"
+      });
+      const { width, height } = await page.evaluate(() => ({
+        width: 864,
+        height: document.body.scrollHeight
+      }));
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+      const image = await page.screenshot({
+        type: "png",
+        fullPage: true,
+        omitBackground: true
+      });
+      await session.send(h.image(image, "image/png"));
+      return true;
+    } catch (err) {
+      log.error(`图片渲染失败:`, err);
+      await this.sendFailed({ error: `图片渲染失败` });
+    } finally {
+      if (page && !page.isClosed()) await page.close();
+    }
+    return false;
   }
 
   // 指令 Status
@@ -313,12 +374,15 @@ export class CommandHandler {
 
     try {
       const imageResponse = await ctx.http(imageUrl);
-      if (imageResponse.status !== 200)
-        throw new Error(`图片下载失败：HTTP ${imageResponse.status}`);
+      if (imageResponse.status !== 200) {
+        const data = { time, error: `图片下载失败: HTTP ${imageResponse.status}` };
+        await this.sendFailed(data);
+        return false;
+      }
 
       const contentTypeHeader = imageResponse.headers.get("Content-Type");
       const contentType = contentTypeHeader
-        ? (contentTypeHeader?.split(";"))[0]
+        ? contentTypeHeader.split(";")[0]
         : "application/octet-stream";
 
       const imageBlob = new Blob([imageResponse.data], { type: contentType });
@@ -337,11 +401,18 @@ export class CommandHandler {
         log
       );
       if (!response.success || typeof response.data !== "object") {
-        throw new Error(`请求失败`);
+        const data = {
+          time,
+          error: `请求失败: ${!response.success ? (response.error instanceof Error ? response.error.message : String(response.error)) : "未知错误"}`
+        };
+        await this.sendFailed(data);
+        return false;
       }
       if (response.data.object !== "content_provenance_check") {
         log.error(response.data);
-        throw new Error(`检测失败`);
+        const data = { time, error: `检测失败: ${response.data?.object ?? "未知错误"}` };
+        await this.sendFailed(data);
+        return false;
       }
 
       const isAi =
@@ -354,7 +425,7 @@ export class CommandHandler {
         cOutcome: response.data.results[0].outcome,
         sOutcome: response.data.results[1].outcome,
         model: response.data.results[0].model ?? response.data.results[1].model,
-        generated_at: response.data.results[0].generated_at ?? response.data.results[1].generated_at,
+        generated_at: response.data.results[0].generated_at ?? response.data.results[1].generated_at
       };
       await this.sendMsg(this.isQQ ? ".msg-md" : ".msg", data);
       log.info("OpenAI 水印检测完成");

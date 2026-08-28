@@ -10,10 +10,10 @@ export interface ConfigCxV3 {
   server: Array<ConfigV3Server>;
 }
 
-interface ConfigV3Server {
+export interface ConfigV3Server {
   api: string;
   note: string;
-  type: "mc" | "a2s" | null | undefined;
+  type: "mc" | "a2s" | "bedrock" | null | undefined;
 }
 
 interface ConfigV2SteamNews {
@@ -67,7 +67,7 @@ export const Config: Schema<ConfigType> = Schema.intersect([
           Schema.object({
             api: Schema.string().description("查询 API | HOST"),
             note: Schema.string().description("查询 备注"),
-            type: Schema.union(["mc", "a2s"]).description("查询 类型")
+            type: Schema.union(["mc", "a2s", "bedrock"]).description("查询 类型")
           })
         ).description("查询 服务器")
       })

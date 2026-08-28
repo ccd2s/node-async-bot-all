@@ -20,47 +20,11 @@ commands:
   cxgame:
     description: 查询服务器当前人数。
     messages:
-      msg: |-
-        {time}{list}
-        进服指南请在群公告中查看。
-      msg-md: |-
-        *{time}*
-
-        ---
-        {list}
-
-        ---
-
-        进服指南请在群公告中查看。
-      list: |-
-        【{name} 服务器 {count}】
-        ➣ {version}：{players}
-        ➣ {ne}：{list}
-        ➣ 备注：{note}
-      list-md: |-
-        ## {name} 服务器 {count}
-
-        - {version}：{players}
-        - {ne}：{list}
-        - 备注：{note}
-      listFailed: |-
-        【{name} 服务器 {count}】
-        ➣ 查询失败：{data}
-        ➣ 请稍后重试。
-        ➣ 备注：{note}
-      listFailed-md: |-
-        ## {name} 服务器 {count}
-
-        - 查询失败：{data}
-        - 请稍后重试。
-        - 备注：{note}
       timeout: 请求超时。
       fewData: 服务端返回的数据过少。
       close: 服务器已关闭。
       host: 没有到主机的路由。
       dns: 解析失败。
-      ne-a2s: 机器人
-      ne-mc: 玩家列表
       forbidden: 此指令不允许在本群使用。
       failed: 查询失败：
   status:
