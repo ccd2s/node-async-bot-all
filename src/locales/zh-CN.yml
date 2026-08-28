@@ -146,6 +146,40 @@ commands:
         - Koishi 版本：{koishiVersion}
         - 开源地址：https://github.com/ccd2s/node-async-bot-all
         - 官网：https://www.tasaed.top
+  openaiwatermark:
+    description: 检测图片是否带有 OpenAI 内容来源水印。
+    usage: |-
+      引用一张图片或直接发送图片后使用此指令。
+      需要配置环境变量 OPENAI_API_KEY。
+    messages:
+      msg: |-
+        {time}
+        【OpenAI 水印检测结果】{#if isAi}
+        结果: YES
+        类型: {mime}
+        概况: c2pa:{cOutcome}, synthid:{sOutcome}{#if model}
+        模型: {model}
+        生成时间: {generated_at}{/if}{:else}
+        结果: NO
+        类型: {mime}{/if}
+      msg-md: |-
+        *{time}*
+
+        ## OpenAI 水印检测结果
+
+        {#if isAi}
+        - 结果: YES
+        - 类型: {mime}
+        - 概况: c2pa:{cOutcome}, synthid:{sOutcome}{#if model}
+        - 模型: {model}
+        - 生成时间: {generated_at}{/if}
+        {:else}
+        - 结果: NO
+        - 类型: {mime}
+        {/if}
+      noApiKey: 未配置 OPENAI_API_KEY。
+      noImage: 未找到图片，请直接发送图片或引用包含图片的消息。
+      failed: 检测失败：{error}
   centerservertest:
     description: 查看中心服务器状态。
     messages:

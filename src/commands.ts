@@ -49,6 +49,27 @@ interface NewsResult {
   image?: Buffer;
 }
 
+interface ContentProvenanceCheck {
+  object: string;
+  created_at: number;
+  results: [
+    {
+      type: string;
+      outcome: string;
+      validation_state: string | null;
+      issuer: string | null;
+      model: string | null;
+      generated_at: string | null;
+    },
+    {
+      type: string;
+      outcome: string;
+      model: string | null;
+      generated_at: string | null;
+    }
+  ];
+}
+
 // 指令处理类
 export class CommandHandler {
   private ctx: Context;
@@ -263,6 +284,89 @@ export class CommandHandler {
     log.debug(data);
     await this.sendMsg(this.isQQ ? ".msg-md" : ".msg", data);
     return true;
+  }
+
+  // 指令 OpenAI 水印检测
+  async openaiWatermark(img: JSX.IntrinsicElements["img"] | undefined): Promise<boolean> {
+    const { ctx, session, log, time } = this;
+    const apiKey = ctx.config.openAiKey;
+    if (!apiKey) {
+      const data = { time, error: session.text(".noApiKey") };
+      await this.sendFailed(data);
+      log.warn(data);
+      return false;
+    }
+
+    const image = img
+      ? undefined
+      : session.quote?.elements?.find(
+          (element) => element.type === "img" || element.type === "image"
+        );
+
+    const imageUrl = img?.src ?? image?.attrs?.src ?? image?.attrs?.url;
+    if (!imageUrl || typeof imageUrl !== "string") {
+      const data = { time, error: session.text(".noImage") };
+      await this.sendFailed(data);
+      log.info(data);
+      return false;
+    }
+
+    try {
+      const imageResponse = await ctx.http(imageUrl);
+      if (imageResponse.status !== 200)
+        throw new Error(`图片下载失败：HTTP ${imageResponse.status}`);
+
+      const contentTypeHeader = imageResponse.headers.get("Content-Type");
+      const contentType = contentTypeHeader
+        ? (contentTypeHeader?.split(";"))[0]
+        : "application/octet-stream";
+
+      const imageBlob = new Blob([imageResponse.data], { type: contentType });
+      const extension = contentType.split("/")[1] || "bin";
+      const form = new FormData();
+      form.append("file", imageBlob, `image.${extension}`);
+
+      const response = await fun.request<ContentProvenanceCheck>(
+        "https://api.openai.com/v1/content_provenance_checks",
+        ctx,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` },
+          data: form
+        },
+        log
+      );
+      if (!response.success || typeof response.data !== "object") {
+        throw new Error(`请求失败`);
+      }
+      if (response.data.object !== "content_provenance_check") {
+        log.error(response.data);
+        throw new Error(`检测失败`);
+      }
+
+      const isAi =
+        response.data.results[0].outcome == "detected" ||
+        response.data.results[1].outcome == "detected";
+      const data = {
+        time,
+        isAi,
+        mime: contentType,
+        cOutcome: response.data.results[0].outcome,
+        sOutcome: response.data.results[1].outcome,
+        model: response.data.results[0].model ?? response.data.results[1].model,
+        generated_at: response.data.results[0].generated_at ?? response.data.results[1].generated_at,
+      };
+      await this.sendMsg(this.isQQ ? ".msg-md" : ".msg", data);
+      log.info("OpenAI 水印检测完成");
+      log.debug(response.data);
+      return true;
+    } catch (error) {
+      const data = { time, error: error instanceof Error ? error.message : String(error) };
+      await this.sendFailed(data);
+      log.error(error);
+      log.error(data);
+      return false;
+    }
   }
 
   // 指令 centerServerTest

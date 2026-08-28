@@ -221,6 +221,15 @@ export class NodeAsyncBot {
     this.na.subcommand("info").action(async ({ session }) => {
       await this.execCommand(session as Session, "info", (handler) => handler.info(this.botData));
     });
+    this.na
+      .subcommand("openaiWatermark [图片:image]")
+      .alias("openai水印")
+      .alias("oaic")
+      .action(async ({ session }, image) => {
+        await this.execCommand(session as Session, "openaiWatermark", (handler) =>
+          handler.openaiWatermark(image)
+        );
+      });
     // this.na
     //   .subcommand('centerServerTest')
     //   .alias('测测中心服务器')

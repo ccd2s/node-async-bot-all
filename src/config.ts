@@ -91,5 +91,8 @@ export const Config: Schema<ConfigType> = Schema.intersect([
   Schema.object({
     specialMsg: Schema.array(String).default([]).description("特殊消息"),
     reactionId: Schema.array(Number).default([]).description("回应表情 ID")
-  }).description("特殊消息回应")
+  }).description("特殊消息回应"),
+  Schema.object({
+    openAiKey: Schema.string().default("").description("OpenAI Key")
+  }).description("OpenAI 检测")
 ]).description("基础设置");
