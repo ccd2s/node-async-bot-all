@@ -3,7 +3,7 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 // koishi and plugin
-import { Context, FlatPick, Time, sleep, HTTP, Logger } from "koishi";
+import { Context, FlatPick, HTTP, Logger, sleep, Time } from "koishi";
 import Analytics from "@koishijs/plugin-analytics";
 // steam-server-query ^1.1.3
 import { queryGameServerInfo } from "steam-server-query";
@@ -11,12 +11,13 @@ import { queryGameServerInfo } from "steam-server-query";
 import { parseRssFeed } from "feedsmith";
 // minecraft-server-util ^5.4.4
 import {
+  BedrockStatusResponse,
   JavaStatusResponse,
   status,
-  statusBedrock,
-  BedrockStatusResponse
+  statusBedrock
 } from "minecraft-server-util";
 import { Servers } from "./commands.ts";
+import { implInfo, versionInfo } from "./config.ts";
 
 /**
  * HTTP 请求类型
@@ -780,6 +781,23 @@ export function getServerCardHtml(servers: Servers[], time: string): string {
         </script>
         </body>
         </html>`;
+}
+
+export async function getImplInfo(
+  ctx: Context,
+  log: Logger
+): Promise<undefined | implInfo | versionInfo> {
+  if (ctx.bots?.length < 0) return undefined;
+  log.debug("Bot 0 Name:", ctx.bots[0]?.adapterName);
+  if (ctx.bots[0]?.adapterName == "milky") {
+    const impl: implInfo = await ctx.bots[0].internal.getImplInfo();
+    log.debug("Impl:", impl);
+    return impl?.impl_name ? impl : undefined;
+  } else if (ctx.bots[0]?.adapterName == "onebot") {
+    const version: versionInfo = await ctx.bots[0].internal.getVersionInfo();
+    log.debug("Version:", version);
+    return version?.protocol_version ? version : undefined;
+  } else return undefined;
 }
 
 const CX_JS = `

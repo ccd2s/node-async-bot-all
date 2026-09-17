@@ -42,7 +42,8 @@ export interface botDataType {
   version: string;
   koishiVersion: string;
   nodeVersion: string;
-  impl: implInfo;
+  impl: undefined | implInfo | versionInfo;
+  adapterName?: string;
 }
 
 export interface implInfo {
@@ -51,6 +52,12 @@ export interface implInfo {
   qq_protocol_version?: string;
   qq_protocol_type?: string;
   milky_version?: string;
+}
+
+export interface versionInfo {
+  app_name?: string;
+  app_version?: string;
+  protocol_version: string;
 }
 
 // 配置项

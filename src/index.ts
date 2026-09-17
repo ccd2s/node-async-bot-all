@@ -3,7 +3,7 @@ import { Context, Session, Command, Random } from "koishi";
 // node-async-bot-all
 import { CommandHandler } from "./commands.ts";
 import * as fun from "./fun.ts";
-import { botDataTables, botDataType, implInfo } from "./config.ts";
+import { botDataTables, botDataType } from "./config.ts";
 import { version } from "../package.json";
 
 // 在上下文中注入
@@ -79,17 +79,18 @@ export class NodeAsyncBot {
 
   public async init(ct: Context): Promise<void> {
     this.ctx = ct;
+    const log = this.ctx.logger("NaInit");
     const date = new Date().getTime().toString().substring(0, 10);
     const info = await fun.readInfo(this.ctx);
-    const impl: implInfo =
-      this.ctx.bots[0].adapterName == "milky" ? await this.ctx.bots[0].internal.getImplInfo() : {};
     this.botData = {
       version,
       uptime: date,
       koishiVersion: typeof info === "string" ? "未知" : info.koishiVersion,
       nodeVersion: typeof info === "string" ? "未知" : info.nodeVersion,
-      impl
+      impl: await fun.getImplInfo(this.ctx, log),
+      adapterName: this.ctx.bots?.length > 0 ? this.ctx.bots[0]?.adapterName : undefined
     };
+    log.debug("registered botData:", this.botData);
     // 数据库表
     this.ctx.model.extend("botData", {
       // 向表中注入字符串
@@ -101,7 +102,9 @@ export class NodeAsyncBot {
       { id: "uptime", data: this.botData.uptime },
       { id: "version", data: this.botData.version }
     ]);
+    log.debug("updated database");
     this.na = this.ctx.command("na");
+    log.debug("registered command");
   }
 
   // reaction 辅助方法
@@ -110,7 +113,7 @@ export class NodeAsyncBot {
       await session.bot.createReaction(
         session.channelId as string,
         session.messageId as string,
-        `face|424`
+        this.botData.adapterName == "milky" ? `face|424` : `424`
       );
   }
 
@@ -119,13 +122,13 @@ export class NodeAsyncBot {
       await session.bot.deleteReaction(
         session.channelId as string,
         session.messageId as string,
-        `face|424`
+        this.botData.adapterName == "milky" ? `face|424` : `424`
       );
     if (session.bot.createReaction)
       await session.bot.createReaction(
         session.channelId as string,
         session.messageId as string,
-        `face|144`
+        this.botData.adapterName == "milky" ? `face|144` : `144`
       );
   }
 
@@ -134,13 +137,13 @@ export class NodeAsyncBot {
       await session.bot.deleteReaction(
         session.channelId as string,
         session.messageId as string,
-        `face|424`
+        this.botData.adapterName == "milky" ? `face|424` : `424`
       );
     if (session.bot.createReaction)
       await session.bot.createReaction(
         session.channelId as string,
         session.messageId as string,
-        `face|38`
+        this.botData.adapterName == "milky" ? `face|38` : `38`
       );
   }
 
@@ -186,10 +189,11 @@ export class NodeAsyncBot {
       if (session.bot.createReaction) {
         for (const content of this.ctx.config.specialMsg) {
           if (ctt === content) {
+            const id = String(new Random(() => Math.random()).pick(this.ctx.config.reactionId));
             await session.bot.createReaction(
               session.channelId as string,
               session.messageId as string,
-              `face|${String(new Random(() => Math.random()).pick(this.ctx.config.reactionId))}`
+              this.botData.adapterName == "milky" ? `face|${id}` : id
             );
           }
         }

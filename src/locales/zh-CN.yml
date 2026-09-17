@@ -8,11 +8,11 @@ failed-md: |-
   **{time}**
   {error}
 cat: |-
-  --- {name}Cat 信息 ---
+  --- NodeAsyncBot 信息 ---
   运行平台: {platform}
   机器人版本: {version}
-  Koishi 版本：{koishiVersion}
-  {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
+  Koishi 版本：{koishiVersion}{#if implName}
+  {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}{/if}
   运行时间: {time}
 commands:
   na:
@@ -39,8 +39,8 @@ commands:
         --- 机器人状态 ---
         昨日收/发消息数量：{msgCount}
         机器人版本：{version}
-        Koishi 版本：{koishiVersion}
-        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
+        Koishi 版本：{koishiVersion}{#if implName}
+        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}{/if}
         运行时间：{online}
       msg-md: |-
         *{time}*
@@ -87,8 +87,8 @@ commands:
         德二吹风机（3112836258）
         --- 其他 ---
         Node.js 版本：{nodeVersion}
-        Koishi 版本：{koishiVersion}
-        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}
+        Koishi 版本：{koishiVersion}{#if implName}
+        {implName} 版本：{implVersion}@{qqProtocolType}-{qqProtocolVersion}{/if}
         开源地址：https://github.com/ccd2s/node-async-bot-all
         官网：https://www.tasaed.top
       msg-md: |-

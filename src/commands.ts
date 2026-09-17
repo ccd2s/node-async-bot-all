@@ -286,6 +286,7 @@ export class CommandHandler {
       return false;
     }
     const msgCount = await fun.getMsgCount(ctx);
+    const impl = botData.impl ?? {};
     const data = {
       time,
       name: vMsg.name,
@@ -298,10 +299,14 @@ export class CommandHandler {
       msgCount: `${msgCount.receive}/${msgCount.send}`,
       version: botData.version,
       koishiVersion: botData.koishiVersion,
-      implName: botData.impl.impl_name,
-      implVersion: botData.impl.impl_version,
-      qqProtocolType: botData.impl.qq_protocol_type,
-      qqProtocolVersion: botData.impl.qq_protocol_version
+      implName: "protocol_version" in impl ? impl?.app_name : (impl?.impl_name ?? undefined),
+      implVersion:
+        "protocol_version" in impl ? impl?.app_version : (impl?.impl_version ?? undefined),
+      qqProtocolType: "protocol_version" in impl ? "Linux" : (impl?.qq_protocol_type ?? undefined),
+      qqProtocolVersion:
+        "protocol_version" in impl
+          ? impl?.protocol_version
+          : (impl?.qq_protocol_version ?? undefined)
     };
     log.debug("Sent:");
     log.debug(data);
@@ -331,14 +336,19 @@ export class CommandHandler {
   // 指令 Info
   async info(botData: botDataType): Promise<boolean> {
     const { log, time } = this;
+    const impl = botData.impl ?? {};
     const data = {
       time,
       nodeVersion: botData.nodeVersion,
       koishiVersion: botData.koishiVersion,
-      implName: botData.impl.impl_name,
-      implVersion: botData.impl.impl_version,
-      qqProtocolType: botData.impl.qq_protocol_type,
-      qqProtocolVersion: botData.impl.qq_protocol_version,
+      implName: "protocol_version" in impl ? impl?.app_name : (impl?.impl_name ?? undefined),
+      implVersion:
+        "protocol_version" in impl ? impl?.app_version : (impl?.impl_version ?? undefined),
+      qqProtocolType: "protocol_version" in impl ? "Linux" : (impl?.qq_protocol_type ?? undefined),
+      qqProtocolVersion:
+        "protocol_version" in impl
+          ? impl?.protocol_version
+          : (impl?.qq_protocol_version ?? undefined),
       version: botData.version
     };
     log.debug("Sent:");
@@ -511,13 +521,12 @@ export class CommandHandler {
   }
 
   static async handleCatMessage(session: Session, botData: botDataType): Promise<void> {
-    const match = session.content?.match(/^#([a-zA-Z0-9]+)cat$/);
-    if (!match) return;
+    if (session.content?.toLowerCase() !== "#na") return;
 
     const system = await fun.getSystemUsage();
+    const impl = botData.impl ?? {};
     await session.send(
       session.text("cat", {
-        name: match[1].charAt(0).toUpperCase() + match[1].slice(1),
         time: fun.formatTimestampDiff(
           Number(botData.uptime),
           Number(session.event.timestamp.toString().substring(0, 10))
@@ -525,10 +534,15 @@ export class CommandHandler {
         version: botData.version,
         platform: system.success == 1 ? "未知" : system.name,
         koishiVersion: botData.koishiVersion,
-        implName: botData.impl.impl_name,
-        implVersion: botData.impl.impl_version,
-        qqProtocolType: botData.impl.qq_protocol_type,
-        qqProtocolVersion: botData.impl.qq_protocol_version
+        implName: "protocol_version" in impl ? impl?.app_name : (impl?.impl_name ?? undefined),
+        implVersion:
+          "protocol_version" in impl ? impl?.app_version : (impl?.impl_version ?? undefined),
+        qqProtocolType:
+          "protocol_version" in impl ? "Linux" : (impl?.qq_protocol_type ?? undefined),
+        qqProtocolVersion:
+          "protocol_version" in impl
+            ? impl?.protocol_version
+            : (impl?.qq_protocol_version ?? undefined)
       })
     );
   }
