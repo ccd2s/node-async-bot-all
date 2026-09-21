@@ -5,6 +5,7 @@ import Puppeteer from "koishi-plugin-puppeteer";
 // node-async-bot-all
 import * as fun from "./fun.ts";
 import { botDataType, ConfigCxV3, ConfigV3Server } from "./config.ts";
+import { getMsgCardHtml, getServerCardHtml } from "./html.ts";
 
 // 类型声明
 declare module "koishi" {
@@ -242,7 +243,7 @@ export class CommandHandler {
         height: 800,
         deviceScaleFactor: 2
       });
-      const html = fun.getServerCardHtml(entries, time);
+      const html = getServerCardHtml(entries, time);
       await page.setContent(html, {
         timeout: ctx.config.htmlTimeout,
         waitUntil: "networkidle0"
@@ -518,6 +519,105 @@ export class CommandHandler {
       log.warn(data);
       return false;
     }
+  }
+
+  async getMsg(inversion: boolean | undefined): Promise<boolean> {
+    const { ctx, session, log, time } = this;
+    // 未引用时退出
+    if (!session.quote || !session.quote.user) {
+      await session.send(session.text(".null"));
+      log.warn("未引用任何信息");
+      return false;
+    }
+    // 禁止套娃！
+    if (session.quote.user.id == session.event.selfId) {
+      await session.send(session.text(".matroska", { quote: h.quote(session.messageId) }));
+      log.debug("套娃");
+      return false;
+    }
+    // 获取用户信息
+    const user = await session.bot.getUser(session.quote.user.id, session.channelId);
+    // 消息内容 支持图片
+    const msg: string = session.quote.content as string;
+    const timestamp: number = session.quote.timestamp as number;
+    const quoteMsg: string | undefined = session.quote.quote?.content;
+    const quoteUser: string | undefined = session.quote.quote?.user?.name;
+    log.debug(msg);
+    // 如果获取失败
+    if (!user.name || !user.avatar) {
+      await session.send(
+        session.text(".failed", {
+          quote: h.quote(session.messageId),
+          time: time,
+          data: "获取用户信息失败。"
+        })
+      );
+      log.error("获取用户信息失败");
+      return false;
+    }
+    const page = await ctx.puppeteer.page();
+    log.debug("Info:", user.name, user.avatar, msg, inversion, quoteUser, quoteMsg, timestamp);
+    const html = getMsgCardHtml(
+      user.name,
+      user.avatar,
+      msg,
+      inversion,
+      quoteUser,
+      quoteMsg,
+      fun.getHongKongTime(new Date(timestamp))
+    );
+    log.debug(html);
+    try {
+      await page.setViewport({
+        width: 450,
+        height: 1,
+        deviceScaleFactor: 2
+      });
+      await page.setContent(html, { timeout: ctx.config.htmlTimeout, waitUntil: "networkidle0" });
+      const { width, height } = await page.evaluate(() => ({
+        width: document.body.scrollWidth + 50,
+        height: document.body.scrollHeight
+      }));
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+      // 选定元素截图
+      const element = await page.$("#target-element");
+      if (element) {
+        const image = await element.screenshot({
+          type: "png",
+          omitBackground: true // 使得 CSS 中未定义的背景部分透明
+        });
+        await session.send(
+          session.text(".msg", {
+            quote: h.quote(session.messageId),
+            image: h.image(image, "image/png")
+          })
+        );
+        log.debug("Sent: Image");
+      } else {
+        await session.send(
+          session.text(".failed", {
+            quote: h.quote(session.messageId),
+            time: time,
+            data: "未找到目标元素。"
+          })
+        );
+        log.error("未找到目标元素");
+        return false;
+      }
+    } catch (err) {
+      await session.send(
+        session.text(".failed", {
+          quote: h.quote(session.messageId),
+          time: time,
+          data: "图片渲染失败"
+        })
+      );
+      log.error("图片渲染失败:", err);
+      return false;
+    } finally {
+      if (page && !page.isClosed()) await page.close();
+    }
+    return true;
   }
 
   static async handleCatMessage(session: Session, botData: botDataType): Promise<void> {

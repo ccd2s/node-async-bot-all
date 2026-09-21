@@ -234,6 +234,16 @@ export class NodeAsyncBot {
           handler.openaiWatermark(image)
         );
       });
+    this.na
+      .subcommand("msg2img")
+      .option("inversion", "-i")
+      .alias("消息转图")
+      .alias("m")
+      .action(async ({ session, options }) => {
+        await this.execCommand(session as Session, "getMsg", (handler) =>
+          handler.getMsg(options?.inversion)
+        );
+      });
     // this.na
     //   .subcommand('centerServerTest')
     //   .alias('测测中心服务器')
